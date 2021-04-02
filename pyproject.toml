@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "volttron-client"
+version = "0.1.0"
+description = "Client for connecting to a volttron server"
+authors = ["C. Allwardt <craig.allwardt@pnnl.gov>"]
+license = "Apache 2.0"
+packages = [
+    { include = "volttron" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+gevent = "20.6.1"
+greenlet = "0.4.16"
+idna = "<3,>=2.5"
+zmq = "^0.0.0"
+PyYAML = "^5.4.1"
+pytz = "^2021.1"
+tzlocal = "^2.1"
+dateutils = "^0.6.12"
+grequests = "^0.6.0"
+volttron-utils = { file = "../volttron-utils/dist/volttron_utils-0.1.0-py3-none-any.whl"}
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
