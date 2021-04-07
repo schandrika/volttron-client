@@ -650,7 +650,7 @@ class ZMQCore(Core):
         self._set_keys()
 
         _log.debug("AGENT RUNNING on ZMQ Core {}".format(self.identity))
-
+        _log.debug(f"keys: server: {self.serverkey} public: {self.publickey}, secret: {self.secretkey}")
         self.socket = None
 
     def get_connected(self):
@@ -698,19 +698,22 @@ class ZMQCore(Core):
     def _set_server_key(self):
         if self.serverkey is None:
             self.serverkey = self._get_keys_from_addr()[2]
-        known_serverkey = self._get_serverkey_from_known_hosts()
 
-        if (self.serverkey is not None and known_serverkey is not None
-                and self.serverkey != known_serverkey):
-            raise Exception("Provided server key ({}) for {} does "
-                            "not match known serverkey ({}).".format(
-                self.serverkey, self.address, known_serverkey))
+        if self.serverkey is None:
+            raise ValueError("Serverkey was not set properly!")
+        # known_serverkey = self._get_serverkey_from_known_hosts()
+        #
+        # if (self.serverkey is not None and known_serverkey is not None
+        #         and self.serverkey != known_serverkey):
+        #     raise Exception("Provided server key ({}) for {} does "
+        #                     "not match known serverkey ({}).".format(
+        #         self.serverkey, self.address, known_serverkey))
 
-        # Until we have containers for agents we should not require all
-        # platforms that connect to be in the known host file.
-        # See issue https://github.com/VOLTTRON/volttron/issues/1117
-        if known_serverkey is not None:
-            self.serverkey = known_serverkey
+        # # Until we have containers for agents we should not require all
+        # # platforms that connect to be in the known host file.
+        # # See issue https://github.com/VOLTTRON/volttron/issues/1117
+        # if known_serverkey is not None:
+        #     self.serverkey = known_serverkey
 
     def _get_serverkey_from_known_hosts(self):
         return "ElFyUsn0sbF6vPrGBTtVVOMDqPzOOVXpnLUA-RJpkEo"
