@@ -82,87 +82,14 @@ __author__ = 'Brandon Carpenter <brandon.carpenter@pnnl.gov>'
 __copyright__ = 'Copyright (c) 2016, Battelle Memorial Institute'
 __license__ = 'Apache 2.0'
 
-_comment_re = re.compile(
-    r'((["\'])(?:\\?.)*?\2)|(/\*.*?\*/)|((?:#|//).*?(?=\n|$))',
-    re.MULTILINE | re.DOTALL)
+
 
 _log = logging.getLogger(__name__)
 
-# The following are the only allowable characters for identities.
-_VALID_IDENTITY_RE = re.compile(r"^[A-Za-z0-9_.\-]+$")
 
 
-def is_valid_identity(identity_to_check):
-    """ Checks the passed identity to see if it contains invalid characters
-
-    A None value for identity_to_check will return False
-
-    @:param: string: The vip_identity to check for validity
-    @:return: boolean: True if values are in the set of valid characters.
-    """
-
-    if identity_to_check is None:
-        return False
-
-    return _VALID_IDENTITY_RE.match(identity_to_check)
 
 
-def normalize_identity(pre_identity):
-    if is_valid_identity(pre_identity):
-        return pre_identity
-
-    if pre_identity is None:
-        raise ValueError("Identity cannot be none.")
-
-    norm = ""
-    for s in pre_identity:
-        if _VALID_IDENTITY_RE.match(s):
-            norm += s
-        else:
-            norm += '_'
-
-    return norm
-
-
-def _repl(match):
-    """Replace the matched group with an appropriate string."""
-    # If the first group matched, a quoted string was matched and should
-    # be returned unchanged.  Otherwise a comment was matched and the
-    # empty string should be returned.
-    return match.group(1) or ''
-
-
-def strip_comments(string):
-    """Return string with all comments stripped.
-
-    Both JavaScript-style comments (//... and /*...*/) and hash (#...)
-    comments are removed.
-    """
-    return _comment_re.sub(_repl, string)
-
-
-def load_config(config_path):
-    """Load a JSON-encoded configuration file."""
-    if config_path is None:
-        _log.info("AGENT_CONFIG does not exist in environment. load_config returning empty configuration.")
-        return {}
-
-    if not os.path.exists(config_path):
-        _log.info("Config file specified by AGENT_CONFIG does not exist. load_config returning empty configuration.")
-        return {}
-
-    # First attempt parsing the file with a yaml parser (allows comments natively)
-    # Then if that fails we fallback to our modified json parser.
-    try:
-        with open(config_path) as f:
-            return yaml.safe_load(f.read())
-    except yaml.scanner.ScannerError as e:
-        try:
-            with open(config_path) as f:
-                return parse_json_config(f.read())
-        except Exception as e:
-            _log.error("Problem parsing agent configuration")
-            raise
 
 
 def load_platform_config(vhome=None):

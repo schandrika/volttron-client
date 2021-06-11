@@ -19,7 +19,8 @@ pytz = "^2021.1"
 tzlocal = "^2.1"
 dateutils = "^0.6.12"
 grequests = "^0.6.0"
-volttron-utils = "^0.1.0"
+# volttron-utils = "^0.1.0"
+volttron-utils = { path="../volttron-utils", develop=true}
 psutil = "^5.8.0"
 
 [tool.poetry.dev-dependencies]
