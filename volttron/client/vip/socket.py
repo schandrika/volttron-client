@@ -36,7 +36,7 @@
 # under Contract DE-AC05-76RL01830
 # }}}
 
-'''VIP - VOLTTRON™ Interconnect Protocol implementation
+"""VIP - VOLTTRON™ Interconnect Protocol implementation
 
 See https://volttron.readthedocs.io/en/develop/core_services/messagebus/VIP/VIP-Overview.html
 for protocol specification.
@@ -45,9 +45,7 @@ This file contains an abstract _Socket class which should be extended to
 provide missing features for different threading models. The standard
 Socket class is defined in __init__.py. A gevent-friendly version is
 defined in green.py.
-'''
-
-
+"""
 
 
 import base64
@@ -60,14 +58,23 @@ import urllib.request, urllib.parse, urllib.error
 import urllib.parse
 import uuid
 
-from zmq import (SNDMORE, RCVMORE, NOBLOCK, POLLOUT, DEALER, ROUTER,
-                 curve_keypair, Frame, ZMQError)
+from zmq import (
+    SNDMORE,
+    RCVMORE,
+    NOBLOCK,
+    POLLOUT,
+    DEALER,
+    ROUTER,
+    curve_keypair,
+    Frame,
+    ZMQError,
+)
 from zmq.error import Again
 from zmq.utils import z85
 
 from volttron.utils.frame_serialization import deserialize_frames, serialize_frames
 
-__all__ = ['Address', 'ProtocolError', 'Message', 'nonblocking']
+__all__ = ["Address", "ProtocolError", "Message", "nonblocking"]
 
 BASE64_ENCODED_CURVE_KEY_LEN = 43
 
@@ -77,35 +84,32 @@ _log = logging.getLogger(__name__)
 @contextmanager
 def nonblocking(sock):
     local = sock._Socket__local
-    flags = getattr(local, 'flags', 0)
+    flags = getattr(local, "flags", 0)
     local.flags = NOBLOCK
     yield sock
     local.flags = flags
 
 
-
-
-
 def decode_key(key):
-    '''Parse and return a Z85 encoded key from other encodings.'''
+    """Parse and return a Z85 encoded key from other encodings."""
     if isinstance(key, str):
         key = key.encode("ASCII")
     length = len(key)
     if length == 40:
         return key
     elif length == 43:
-        return z85.encode(base64.urlsafe_b64decode(key + '='.encode("ASCII")))
+        return z85.encode(base64.urlsafe_b64decode(key + "=".encode("ASCII")))
     elif length == 44:
         return z85.encode(base64.urlsafe_b64decode(key))
     elif length == 54:
-        return base64.urlsafe_b64decode(key + '=='.encode("ASCII"))
+        return base64.urlsafe_b64decode(key + "==".encode("ASCII"))
     elif length == 56:
         return base64.urlsafe_b64decode(key)
     elif length == 64:
         return z85.encode(binascii.unhexlify(key))
     elif length == 80:
         return binascii.unhexlify(key)
-    raise ValueError('unknown key encoding')
+    raise ValueError("unknown key encoding")
 
 
 class Address(object):
@@ -127,9 +131,17 @@ class Address(object):
         password:  Password to use with PLAIN authentication.
     """
 
-    _KEYS = ('domain', 'server', 'secretkey', 'publickey',
-             'serverkey', 'ipv6', 'username', 'password')
-    _MASK_KEYS = ('secretkey', 'password')
+    _KEYS = (
+        "domain",
+        "server",
+        "secretkey",
+        "publickey",
+        "serverkey",
+        "ipv6",
+        "username",
+        "password",
+    )
+    _MASK_KEYS = ("secretkey", "password")
 
     def __init__(self, address, **defaults):
         for name in self._KEYS:
@@ -137,83 +149,90 @@ class Address(object):
         for name, value in defaults.items():
             setattr(self, name, value)
 
-        url = urllib.parse.urlparse(address, 'tcp')
+        url = urllib.parse.urlparse(address, "tcp")
 
         # Old versions of python don't correctly parse queries for unknown
         # schemes. This can cause ipc failures on outdated installations.
-        if not url.query and '?' in url.path:
-            path, query = url.path.split('?')
+        if not url.query and "?" in url.path:
+            path, query = url.path.split("?")
             url = url._replace(path=path)
             url = url._replace(query=query)
         self.publickey = None
         self.secretkey = None
-        self.base = '%s://%s%s' % url[:3]
+        self.base = "%s://%s%s" % url[:3]
         if url.fragment:
             self.identity = url.fragment
-        elif address.endswith('#'):
-            self.identity = ''
+        elif address.endswith("#"):
+            self.identity = ""
         else:
-            self.identity = defaults.get('identity')
-        if url.scheme not in ['tcp', 'ipc', 'inproc']:
-            raise ValueError('unknown address scheme: %s' % url.scheme)
+            self.identity = defaults.get("identity")
+        if url.scheme not in ["tcp", "ipc", "inproc"]:
+            raise ValueError("unknown address scheme: %s" % url.scheme)
         for name, value in urllib.parse.parse_qsl(url.query, True):
             name = name.lower()
             if name in self._KEYS:
-                if value and name.endswith('key'):
+                if value and name.endswith("key"):
                     value = decode_key(value)
-                elif name == 'server':
+                elif name == "server":
                     value = value.upper().strip()
-                    if value not in ['NULL', 'PLAIN', 'CURVE']:
-                        raise ValueError(
-                            'bad value for server parameter: %r' % value)
-                elif name == 'ipv6':
-                    value = bool(re.sub(
-                        r'\s*(0|false|no|off)\s*', r'', value, flags=re.I))
+                    if value not in ["NULL", "PLAIN", "CURVE"]:
+                        raise ValueError("bad value for server parameter: %r" % value)
+                elif name == "ipv6":
+                    value = bool(
+                        re.sub(r"\s*(0|false|no|off)\s*", r"", value, flags=re.I)
+                    )
                 setattr(self, name, value)
 
     @property
     def qs(self):
         params = ((name, getattr(self, name)) for name in self._KEYS)
         return urllib.parse.urlencode(
-            {name: ('XXXXX' if name in self._MASK_KEYS and value else value)
-             for name, value in params if value is not None})
+            {
+                name: ("XXXXX" if name in self._MASK_KEYS and value else value)
+                for name, value in params
+                if value is not None
+            }
+        )
 
     def __str__(self):
         parts = [self.base]
         qs = self.qs
         if qs:
-            parts.extend(['?', qs])
+            parts.extend(["?", qs])
         if self.identity is not None:
-            parts.extend(['#', urllib.parse.quote(self.identity)])
-        return ''.join(parts)
+            parts.extend(["#", urllib.parse.quote(self.identity)])
+        return "".join(parts)
 
     def __repr__(self):
-        return '%s.%s(%r)' % (
-            self.__class__.__module__, self.__class__.__name__, str(self))
+        return "%s.%s(%r)" % (
+            self.__class__.__module__,
+            self.__class__.__name__,
+            str(self),
+        )
 
     def _set_sock_identity(self, sock):
         if self.identity:
             if isinstance(self.identity, str):
-                sock.identity = self.identity.encode('utf-8')
+                sock.identity = self.identity.encode("utf-8")
             else:
                 sock.identity = self.identity
         elif not sock.identity:
             self.identity = str(uuid.uuid4())
-            sock.identity = self.identity.encode('utf-8')
+            sock.identity = self.identity.encode("utf-8")
 
     def bind(self, sock, bind_fn=None):
         """Extended zmq.Socket.bind() to include options in the address."""
         if not self.domain:
-            raise ValueError('Address domain must be set')
-        sock.zap_domain = self.domain.encode("utf-8") or b''
+            raise ValueError("Address domain must be set")
+        sock.zap_domain = self.domain.encode("utf-8") or b""
         self._set_sock_identity(sock)
         sock.ipv6 = self.ipv6 or False
-        if self.server == 'CURVE':
+        if self.server == "CURVE":
             if not self.secretkey:
-                raise ValueError('CURVE server used without secretkey')
+                raise ValueError("CURVE server used without secretkey")
             sock.curve_server = True
             sock.curve_secretkey = self.secretkey
-        elif self.server == 'PLAIN':
+        elif self.server == "PLAIN":
             sock.plain_server = True
         else:
             sock.curve_server = False
@@ -226,12 +245,12 @@ class Address(object):
                 sock.curve_publickey = self.publickey
             elif self.username:
                 sock.plain_username = self.username
-                sock.plain_password = self.password or b''
+                sock.plain_password = self.password or b""
         try:
             (bind_fn or sock.bind)(self.base)
             self.base = sock.last_endpoint.decode("utf-8")
         except ZMQError:
-            message = 'Attempted to bind Volttron to already bound address {}, stopping'
+            message = "Attempted to bind Volttron to already bound address {}, stopping"
             message = message.format(self.base)
             _log.error(message)
             print("\n" + message + "\n")
@@ -253,7 +272,7 @@ class Address(object):
         (connect_fn or sock.connect)(self.base)
 
     def reset(self, sock):
-        sock.zap_domain = b''
+        sock.zap_domain = b""
         sock.ipv6 = False
         sock.curve_server = False
         sock.plain_server = False
@@ -261,21 +280,23 @@ class Address(object):
 
 class ProtocolError(Exception):
     """Error raised for invalid use of Socket object."""
+
     pass
 
 
 class Message(object):
     """Message object returned form Socket.recv_vip_object()."""
+
     def __init__(self, **kwargs):
         self.__dict__ = kwargs
 
     def __repr__(self):
-        attrs = ', '.join('%r: %r' % (
-            name, [x for x in value]
-            if isinstance(value, (list, tuple))
-            else value) for name, value in
-                self.__dict__.items())
-        return '%s(**{%s})' % (self.__class__.__name__, attrs)
+        attrs = ", ".join(
+            "%r: %r"
+            % (name, [x for x in value] if isinstance(value, (list, tuple)) else value)
+            for name, value in self.__dict__.items()
+        )
+        return "%s(**{%s})" % (self.__class__.__name__, attrs)
 
 
 class _Socket(object):
@@ -299,7 +320,7 @@ class _Socket(object):
         """
         # pylint: disable=arguments-differ
         if socket_type not in [DEALER, ROUTER]:
-            raise ValueError('socket_type must be DEALER or ROUTER')
+            raise ValueError("socket_type must be DEALER or ROUTER")
         if context is None:
             context = cls._context_class.instance()
         # There are multiple backends which handle shadow differently.
@@ -324,9 +345,9 @@ class _Socket(object):
         #    state:  -1    0   [  1  ]    2       3       4      5
         #    frame:  VIA  PEER [PROTO] USER_ID  MSG_ID  SUBSYS  ...
         state = -1 if self.type == ROUTER else 0
-        object.__setattr__(self, '_send_state', state)
-        object.__setattr__(self, '_recv_state', state)
-        object.__setattr__(self, '_Socket__local', self._local_class())
+        object.__setattr__(self, "_send_state", state)
+        object.__setattr__(self, "_recv_state", state)
+        object.__setattr__(self, "_Socket__local", self._local_class())
         self.immediate = True
         # Enable TCP keepalive with idle time of 3 minutes and 6
         # retries spaced 20 seconds apart, for a total of ~5 minutes.
@@ -345,15 +366,15 @@ class _Socket(object):
         state = -1 if self.type == ROUTER else 0
         if self._send_state != state:
             self._send_state = state
-            super(_Socket, self).send('')
+            super(_Socket, self).send("")
 
     @contextmanager
     def _sending(self, flags):
-        flags |= getattr(self._Socket__local, 'flags', 0)
+        flags |= getattr(self._Socket__local, "flags", 0)
         yield flags
 
     def send(self, frame, flags=0, copy=True, track=False):
-        """ Send a single frame while enforcing VIP protocol.
+        """Send a single frame while enforcing VIP protocol.
 
         Expects frames to be sent in the following order:
 
@@ -378,23 +399,23 @@ class _Socket(object):
                 # Verify that subsystem has some non-space content
                 subsystem = bytes(frame)
                 if not subsystem.strip():
-                    raise ProtocolError('invalid subsystem: %s' % subsystem)
+                    raise ProtocolError("invalid subsystem: %s" % subsystem)
             if not flags & SNDMORE:
                 # Must have SNDMORE flag until sending SUBSYSTEM frame.
                 if state < 4:
                     raise ProtocolError(
-                        'expecting at least %d more frames' % (4 - state - 1))
+                        "expecting at least %d more frames" % (4 - state - 1)
+                    )
                 # Reset the send state when the last frame is sent
                 self._send_state = -1 if self.type == ROUTER else 0
             elif state < 5:
                 if state == 1:
                     # Automatically send PROTO frame
-                    super(_Socket, self).send(b'VIP1', flags=flags|SNDMORE)
+                    super(_Socket, self).send(b"VIP1", flags=flags | SNDMORE)
                     state += 1
                 self._send_state = state + 1
             try:
-                super(_Socket, self).send(
-                    frame, flags=flags, copy=copy, track=track)
+                super(_Socket, self).send(frame, flags=flags, copy=copy, track=track)
             except Exception:
                 self._send_state = state
                 raise
@@ -404,10 +425,21 @@ class _Socket(object):
         # _log.debug("Sending parts on multiparts: {}".format(parts))
         with self._sending(flags) as flags:
             super(_Socket, self).send_multipart(
-                parts, flags=flags, copy=copy, track=track)
+                parts, flags=flags, copy=copy, track=track
+            )
 
-    def send_vip(self, peer, subsystem, args=None, msg_id='',
-                 user='', via=None, flags=0, copy=True, track=False):
+    def send_vip(
+        self,
+        peer,
+        subsystem,
+        args=None,
+        msg_id="",
+        user="",
+        via=None,
+        flags=0,
+        copy=True,
+        track=False,
+    ):
         """Send an entire VIP multipartmessage by individual parts.
 
         This method will raise a ProtocolError exception if the previous
@@ -440,43 +472,49 @@ class _Socket(object):
         with self._sending(flags) as flags:
             state = self._send_state
             if state > 0:
-                raise ProtocolError('previous send operation is not complete')
+                raise ProtocolError("previous send operation is not complete")
             elif state == -1:
                 if via is None:
-                    raise ValueError("missing 'via' argument "
-                                     "required by ROUTER sockets")
+                    raise ValueError(
+                        "missing 'via' argument " "required by ROUTER sockets"
+                    )
                 self.send(via, flags=flags | SNDMORE, copy=copy, track=track)
 
             if user is None:
-                user = ''
+                user = ""
 
             more = SNDMORE if args else 0
-            self.send_multipart([peer, user, msg_id, subsystem],
-                                flags=flags|more, copy=copy, track=track)
+            self.send_multipart(
+                [peer, user, msg_id, subsystem],
+                flags=flags | more,
+                copy=copy,
+                track=track,
+            )
             if args:
-                send = (self.send if isinstance(args, (bytes, str))
-                        else self.send_multipart)
+                send = (
+                    self.send if isinstance(args, (bytes, str)) else self.send_multipart
+                )
                 send(args, flags=flags, copy=copy, track=track)
 
     def send_vip_dict(self, dct, flags=0, copy=True, track=False):
         """Send VIP message from a dictionary."""
-        msg_id = dct.pop('id', '')
+        msg_id = dct.pop("id", "")
         self.send_vip(flags=flags, copy=copy, track=track, msg_id=msg_id, **dct)
 
     def send_vip_object(self, msg, flags=0, copy=True, track=False):
         """Send VIP message from an object."""
         dct = {
-            'via': getattr(msg, 'via', None),
-            'peer': msg.peer,
-            'subsystem': msg.subsystem,
-            'user': getattr(msg, 'user', ''),
-            'msg_id': getattr(msg, 'id', ''),
-            'args': getattr(msg, 'args', None),
+            "via": getattr(msg, "via", None),
+            "peer": msg.peer,
+            "subsystem": msg.subsystem,
+            "user": getattr(msg, "user", ""),
+            "msg_id": getattr(msg, "id", ""),
+            "args": getattr(msg, "args", None),
         }
         self.send_vip(flags=flags, copy=copy, track=track, **dct)
 
     def recv(self, flags=0, copy=True, track=False):
-        """ Receive and return a single frame while enforcing VIP protocol.
+        """Receive and return a single frame while enforcing VIP protocol.
 
         Expects frames to be received in the following order:
 
@@ -502,15 +540,19 @@ class _Socket(object):
             proto = super(_Socket, self).recv(flags=flags)
             state += 1
             self._recv_state = state
-            if proto != b'VIP1':
-                raise ProtocolError('invalid protocol: {!r}{}'.format(
-                    proto[:30], '...' if len(proto) > 30 else ''))
+            if proto != b"VIP1":
+                raise ProtocolError(
+                    "invalid protocol: {!r}{}".format(
+                        proto[:30], "..." if len(proto) > 30 else ""
+                    )
+                )
         result = super(_Socket, self).recv(flags=flags, copy=copy, track=track)
         if not self.getsockopt(RCVMORE):
             # Ensure SUBSYSTEM is received
             if state < 4:
                 raise ProtocolError(
-                    'expected at least {} more frames'.format(4 - state - 1))
+                    "expected at least {} more frames".format(4 - state - 1)
+                )
             self._recv_state = -1 if self.type == ROUTER else 0
         elif state < 5:
             self._recv_state = state + 1
@@ -528,7 +570,7 @@ class _Socket(object):
             super(_Socket, self).recv()
 
     def recv_vip(self, flags=0, copy=True, track=False):
-        """ Receive a complete VIP message and return as a list.
+        """Receive a complete VIP message and return as a list.
 
         The list includes frames in the following order:
 
@@ -545,7 +587,7 @@ class _Socket(object):
         """
         state = self._recv_state
         if state > 0:
-            raise ProtocolError('previous recv operation is not complete')
+            raise ProtocolError("previous recv operation is not complete")
         message = self.recv_multipart(flags=flags, copy=copy, track=track)
         idx = 4 - state
         result = message[:idx]
@@ -561,9 +603,9 @@ class _Socket(object):
         # decoded = decode_frames(frames)
 
         myframes = deserialize_frames(frames)
-        dct = dict(zip(('peer', 'user', 'id', 'subsystem', 'args'), myframes))
+        dct = dict(zip(("peer", "user", "id", "subsystem", "args"), myframes))
         if via is not None:
-            dct['via'] = via
+            dct["via"] = via
         return dct
 
     def recv_vip_object(self, flags=0, copy=True, track=False):

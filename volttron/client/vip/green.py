@@ -36,7 +36,7 @@
 # under Contract DE-AC05-76RL01830
 # }}}
 
-'''VIP - VOLTTRON™ Interconnect Protocol implementation
+"""VIP - VOLTTRON™ Interconnect Protocol implementation
 
 See https://volttron.readthedocs.io/en/develop/core_services/messagebus/VIP/VIP-Overview.html
 for protocol specification.
@@ -44,9 +44,7 @@ for protocol specification.
 This module is for use within gevent. It provides some locking around
 send operations to protect the VIP state. It should be safe to use a
 single socket in multiple greenlets without any kind of locking.
-'''
-
-
+"""
 
 
 from contextlib import contextmanager as _contextmanager
@@ -58,8 +56,8 @@ from gevent.lock import RLock as _RLock
 from zmq.green import NOBLOCK, POLLOUT
 from zmq import green as _green
 
-from volttron.platform.vip.router import BaseRouter as _BaseRouter
-from volttron.platform.vip.socket import _Socket
+from volttron.client.vip.router import BaseRouter as _BaseRouter
+from volttron.client.vip.socket import _Socket
 
 
 class Socket(_Socket, _green.Socket):
@@ -68,11 +66,11 @@ class Socket(_Socket, _green.Socket):
 
     def __init__(self, *args, **kwargs):
         super(Socket, self).__init__(*args, **kwargs)
-        object.__setattr__(self, '_Socket__send_lock', _RLock())
+        object.__setattr__(self, "_Socket__send_lock", _RLock())
 
     @_contextmanager
     def _sending(self, flags):
-        flags |= getattr(self._Socket__local, 'flags', 0)
+        flags |= getattr(self._Socket__local, "flags", 0)
         lock = self._Socket__send_lock
         while not lock.acquire(not flags & NOBLOCK):
             if not self.poll(0, POLLOUT):

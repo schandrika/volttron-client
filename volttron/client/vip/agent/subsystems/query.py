@@ -42,17 +42,17 @@ import weakref
 from .base import SubsystemBase
 from ..results import ResultsDictionary
 
-__all__ = ['Query']
+__all__ = ["Query"]
 
 
 class Query(SubsystemBase):
     def __init__(self, core):
         self.core = weakref.ref(core)
         self._results = ResultsDictionary()
-        core.register('query', self._handle_result, self._handle_error)
+        core.register("query", self._handle_result, self._handle_error)
 
-    def query(self, prop: str, peer: str = ''):
-        """ query a specific peer for a property value
+    def query(self, prop: str, peer: str = ""):
+        """query a specific peer for a property value
 
         This method is very useful for retrieving configuration data from the core platform.  When
         peer is not specified it is defaulted to the router.
@@ -65,8 +65,7 @@ class Query(SubsystemBase):
         """
         connection = self.core().connection
         result = next(self._results)
-        connection.send_vip(peer, 'query', args=[prop],
-                            msg_id=result.ident)
+        connection.send_vip(peer, "query", args=[prop], msg_id=result.ident)
         return result
 
     __call__ = query

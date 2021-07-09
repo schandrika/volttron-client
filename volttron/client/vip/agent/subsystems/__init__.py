@@ -37,7 +37,6 @@
 # }}}
 
 
-
 from .channel import Channel
 from .hello import Hello
 from .peerlist import PeerList
@@ -51,6 +50,17 @@ from .auth import Auth
 from .volttronfncs import FNCS
 from .rmq_pubsub import RMQPubSub
 
-__all__ = ['PeerList', 'Ping', 'RPC', 'Hello', 'PubSub', 'RMQPubSub','Channel',
-           'Heartbeat', 'Health', 'ConfigStore', 'Auth', 'FNCS']
-
+__all__ = [
+    "PeerList",
+    "Ping",
+    "RPC",
+    "Hello",
+    "PubSub",
+    "RMQPubSub",
+    "Channel",
+    "Heartbeat",
+    "Health",
+    "ConfigStore",
+    "Auth",
+    "FNCS",
+]

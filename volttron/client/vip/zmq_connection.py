@@ -39,10 +39,11 @@
 import zmq
 import logging
 
-from volttron.platform.vip.green import Socket as GreenSocket
+from ..vip.green import Socket as GreenSocket
 from . import BaseConnection
+
 # TODO ADD BACK rmq
-# from volttron.platform.vip.rmq_connection import BaseConnection
+# from volttron.client.vip.rmq_connection import BaseConnection
 _log = logging.getLogger(__name__)
 
 
@@ -50,6 +51,7 @@ class ZMQConnection(BaseConnection):
     """
     Maintains ZMQ socket connection
     """
+
     def __init__(self, url, identity, instance_name, context):
         super(ZMQConnection, self).__init__(url, identity, instance_name)
 
@@ -63,14 +65,14 @@ class ZMQConnection(BaseConnection):
         if type == zmq.DEALER:
             self.socket = GreenSocket(self.context)
             if self._identity:
-                self.socket.identity = self._identity.encode('utf-8')
+                self.socket.identity = self._identity.encode("utf-8")
         else:
             self.socket = zmq.Socket()
 
-    def set_properties(self,flags):
-        hwm = flags.get('hwm', 6000)
+    def set_properties(self, flags):
+        hwm = flags.get("hwm", 6000)
         self.socket.set_hwm(hwm)
-        reconnect_interval = flags.get('reconnect_interval', None)
+        reconnect_interval = flags.get("reconnect_interval", None)
         if reconnect_interval:
             self.socket.setsockopt(zmq.RECONNECT_IVL, reconnect_interval)
 
@@ -91,10 +93,29 @@ class ZMQConnection(BaseConnection):
     def send_vip_object(self, message, flags=0, copy=True, track=False):
         self.socket.send_vip_object(message, flags, copy, track)
 
-    def send_vip(self, peer, subsystem, args=None, msg_id: bytes = b'',
-                 user=b'', via=None, flags=0, copy=True, track=False):
-        self.socket.send_vip(peer, subsystem, args=args, msg_id=msg_id, user=user,
-                             via=via, flags=flags, copy=copy, track=track)
+    def send_vip(
+        self,
+        peer,
+        subsystem,
+        args=None,
+        msg_id: bytes = b"",
+        user=b"",
+        via=None,
+        flags=0,
+        copy=True,
+        track=False,
+    ):
+        self.socket.send_vip(
+            peer,
+            subsystem,
+            args=args,
+            msg_id=msg_id,
+            user=user,
+            via=via,
+            flags=flags,
+            copy=copy,
+            track=track,
+        )
 
     def recv_vip_object(self, flags=0, copy=True, track=False):
         return self.socket.recv_vip_object(flags, copy, track)
@@ -105,7 +126,10 @@ class ZMQConnection(BaseConnection):
     def close_connection(self, linger=5):
         """This method closes ZeroMQ socket"""
         self.socket.close(linger)
-        _log.debug("********************************************************************")
+        _log.debug(
+            "********************************************************************"
+        )
         _log.debug("Closing connection to ZMQ: {}".format(self._identity))
-        _log.debug("********************************************************************")
-
+        _log.debug(
+            "********************************************************************"
+        )

@@ -46,6 +46,7 @@ class ServicePeerNotifier(object):
     This class is responsible for routing the base_router's connections and disconnections
     from the zmq thread through to the registered callback functions.
     """
+
     def __init__(self):
         self._registered_added = set()
         self._registered_dropped = set()

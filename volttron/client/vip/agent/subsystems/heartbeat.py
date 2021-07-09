@@ -39,9 +39,8 @@
 import weakref
 
 from .base import SubsystemBase
-from volttron.platform.messaging.headers import TIMESTAMP
-from volttron.platform.agent.utils import (get_aware_utc_now,
-                                           format_timestamp)
+from ....messaging.headers import TIMESTAMP
+from volttron.utils import get_aware_utc_now, format_timestamp
 from volttron.utils.scheduling import periodic
 from ..errors import Unreachable
 
@@ -49,13 +48,12 @@ from ..errors import Unreachable
 Heartbeats can be started with agents and toggled on and off at runtime.
 """
 
-__docformat__ = 'reStructuredText'
-__version__ = '1.0'
+__docformat__ = "reStructuredText"
+__version__ = "1.0"
 
 
 class Heartbeat(SubsystemBase):
-    def __init__(self, owner, core, rpc, pubsub, heartbeat_autostart,
-                 heartbeat_period):
+    def __init__(self, owner, core, rpc, pubsub, heartbeat_autostart, heartbeat_period):
         self.owner = owner
         self.core = weakref.ref(core)
         self.pubsub = weakref.ref(pubsub)
@@ -66,11 +64,11 @@ class Heartbeat(SubsystemBase):
         self.connect_error = False
 
         def onsetup(sender, **kwargs):
-            rpc.export(self.start, 'heartbeat.start')
-            rpc.export(self.start_with_period, 'heartbeat.start_with_period')
-            rpc.export(self.stop, 'heartbeat.stop')
-            rpc.export(self.restart, 'heartbeat.restart')
-            rpc.export(self.set_period, 'heartbeat.set_period')
+            rpc.export(self.start, "heartbeat.start")
+            rpc.export(self.start_with_period, "heartbeat.start_with_period")
+            rpc.export(self.stop, "heartbeat.stop")
+            rpc.export(self.restart, "heartbeat.restart")
+            rpc.export(self.set_period, "heartbeat.set_period")
 
         def onstart(sender, **kwargs):
             if self.autostart:
@@ -142,12 +140,11 @@ class Heartbeat(SubsystemBase):
             self.period = period
 
     def publish(self):
-        topic = 'heartbeat/' + self.core().identity
+        topic = "heartbeat/" + self.core().identity
         headers = {TIMESTAMP: format_timestamp(get_aware_utc_now())}
         message = self.owner.vip.health.get_status_value()
         try:
-            self.pubsub().publish('pubsub', topic, headers, message)
+            self.pubsub().publish("pubsub", topic, headers, message)
         except Unreachable as exc:
             self.connect_error = True
             self.stop()
-

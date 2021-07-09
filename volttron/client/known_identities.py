@@ -36,66 +36,59 @@
 # under Contract DE-AC05-76RL01830
 # }}}
 
+AUTH = "platform.auth"
 
-import logging
-import os
+VOLTTRON_CENTRAL = "volttron.central"
+VOLTTRON_CENTRAL_PLATFORM = "platform.agent"
 
-import gevent
+PLATFORM_DRIVER = "platform.driver"
+PLATFORM_TOPIC_WATCHER = "platform.topic_watcher"
+PLATFORM_SYSMON = "platform.sysmon"
+PLATFORM_EMAILER = "platform.emailer"
+PLATFORM_HEALTH = "platform.health"
+# The PLATFORM_ALERTER known name is now deprecated
+PLATFORM_ALERTER = PLATFORM_TOPIC_WATCHER
+PLATFORM_HISTORIAN = "platform.historian"
 
-from volttron.client import get_address
-from volttron.client.agent import utils
-from volttron.client.keystore import KeyStore, KnownHostsStore
-from volttron.client.vip.agent import Agent
-from volttron.client.vip.agent.connection import Connection
+PLATFORM_MARKET_SERVICE = "platform.market"
 
-utils.setup_logging()
-_log = logging.getLogger(__name__)
+ROUTER = ""
+CONTROL = "control"
+CONTROL_CONNECTION = "control.connection"
+PLATFORM_WEB = "platform_web"
+CONFIGURATION_STORE = "config.store"
+KEY_DISCOVERY = "keydiscovery"
+PROXY_ROUTER = "zmq.proxy.router"
 
-host_store = KnownHostsStore()
-
-
-def get_known_host_serverkey(vip_address):
-    return host_store.serverkey(vip_address)
-
-
-def get_server_keys():
-    try:
-        # attempt to read server's keys. Should be used only by multiplatform connection and tests
-        # If agents such as forwarder attempt this in secure mode this will throw access violation exception
-        ks = KeyStore()
-    except IOError as e:
-        raise RuntimeError(
-            "Exception accessing server keystore. Agents must use agent's public and private key"
-            "to build dynamic agents when running in secure mode. Exception:{}".format(
-                e
-            )
-        )
-
-    return ks.public, ks.secret
-
-
-def build_connection(
-    identity,
-    peer="",
-    address=None,
-    publickey=None,
-    secretkey=None,
-    message_bus=None,
-    **kwargs
-):
-    address = address if address is not None else get_address()
-    if publickey is None or secretkey is None:
-        publickey, secretkey = get_server_keys(publickey, secretkey)
-    cn = Connection(
-        address=address,
-        identity=identity,
-        peer=peer,
-        publickey=publickey,
-        secretkey=secretkey,
-        message_bus=message_bus,
-        **kwargs
+ALL_KNOWN_IDENTITIES = sorted(
+    (
+        ROUTER,
+        VOLTTRON_CENTRAL,
+        VOLTTRON_CENTRAL_PLATFORM,
+        PLATFORM_HISTORIAN,
+        CONTROL,
+        CONTROL_CONNECTION,
+        PLATFORM_WEB,
+        AUTH,
+        PLATFORM_TOPIC_WATCHER,
+        CONFIGURATION_STORE,
+        PLATFORM_MARKET_SERVICE,
+        PLATFORM_EMAILER,
+        PLATFORM_SYSMON,
+        PLATFORM_HEALTH,
+        KEY_DISCOVERY,
+        PROXY_ROUTER,
     )
-    return cn
+)
 
-
-
+PROCESS_IDENTITIES = sorted(
+    (
+        AUTH,
+        PLATFORM_HEALTH,
+        CONFIGURATION_STORE,
+        CONTROL,
+        PLATFORM_WEB,
+        KEY_DISCOVERY,
+        PROXY_ROUTER,
+    )
+)

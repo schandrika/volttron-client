@@ -37,7 +37,6 @@
 # }}}
 
 
-
 import logging
 import weakref
 
@@ -46,7 +45,7 @@ from ..results import ResultsDictionary
 from zmq import ZMQError
 from zmq.green import ENOTSOCK
 
-__all__ = ['Ping']
+__all__ = ["Ping"]
 
 
 _log = logging.getLogger(__name__)
@@ -56,18 +55,15 @@ class Ping(SubsystemBase):
     def __init__(self, core):
         self.core = weakref.ref(core)
         self._results = ResultsDictionary()
-        core.register('ping', self._handle_ping, self._handle_error)
+        core.register("ping", self._handle_ping, self._handle_error)
 
     def ping(self, peer, *args):
         result = next(self._results)
         args = list(args)
-        args.insert(0, 'ping')
+        args.insert(0, "ping")
         connection = self.core().connection
         try:
-            connection.send_vip('',
-                                'ping',
-                                args=['drop', peer],
-                                msg_id=result.ident)
+            connection.send_vip("", "ping", args=["drop", peer], msg_id=result.ident)
         except ZMQError as exc:
             if exc.errno == ENOTSOCK:
                 _log.debug("Socket send on non socket {}".format(self.core().identity))
@@ -80,20 +76,20 @@ class Ping(SubsystemBase):
         try:
             op = message.args[0]
         except IndexError:
-            _log.error('missing ping subsystem operation')
+            _log.error("missing ping subsystem operation")
             return
-        if op == 'ping':
-            message.user = ''
-            message.args[0] = 'pong'
+        if op == "ping":
+            message.user = ""
+            message.args[0] = "pong"
             connection.send_vip_object(message, copy=False)
-        elif op == 'pong':
+        elif op == "pong":
             try:
                 result = self._results.pop(message.id)
             except KeyError:
                 return
             result.set([arg for arg in message.args[1:]])
         else:
-            _log.error('unknown ping subsystem operation')
+            _log.error("unknown ping subsystem operation")
 
     def _handle_error(self, sender, message, error, **kwargs):
         try:

@@ -37,7 +37,6 @@
 # }}}
 
 
-
 import functools
 import logging
 import random
@@ -51,22 +50,23 @@ from zmq import ZMQError
 from .base import SubsystemBase
 
 
-__all__ = ['Channel']
+__all__ = ["Channel"]
 
 
 class Channel(SubsystemBase):
-    ADDRESS = 'inproc://subsystem/channel'
+    ADDRESS = "inproc://subsystem/channel"
 
     def __init__(self, core):
         self.context = zmq.Context()
         self.socket = None
         self.greenlet = None
         self._channels = {}
-        core.register('channel', self._handle_subsystem)
+        core.register("channel", self._handle_subsystem)
 
         def setup(sender, **kwargs):
             # pylint: disable=unused-argument
             self.socket = self.context.socket(zmq.ROUTER)
+
         core.onsetup.connect(setup, self)
 
         def start(sender, **kwargs):
@@ -86,7 +86,8 @@ class Channel(SubsystemBase):
                     # XXX: Handle channel not found
                     continue
                 message[0] = name
-                vip_sock.send_vip(peer, 'channel', message, copy=False)
+                vip_sock.send_vip(peer, "channel", message, copy=False)
+
         core.onstart.connect(start, self)
 
         def stop(sender, **kwargs):
@@ -97,6 +98,7 @@ class Channel(SubsystemBase):
                 self.socket.unbind(self.ADDRESS)
             except ZMQError:
                 pass
+
         core.onstop.connect(stop, self)
 
     def _handle_subsystem(self, message):
@@ -117,33 +119,35 @@ class Channel(SubsystemBase):
     def create(self, peer, name=None):
         if name is None:
             while True:
-                name = ''.join(random.choice(string.printable[:-5])
-                               for i in range(30))
+                name = "".join(random.choice(string.printable[:-5]) for i in range(30))
                 channel = (peer, name)
                 if channel not in self._channels:
                     break
         else:
             channel = (peer, name)
             if channel in self._channels:
-                raise ValueError('channel %r is unavailable' % (name,))
+                raise ValueError("channel %r is unavailable" % (name,))
         sock = self.context.socket(zmq.DEALER)
         sock.hwm = 1
-        sock.identity = ident = ('%s.%s' % (hash(channel), hash(sock)))
+        sock.identity = ident = "%s.%s" % (hash(channel), hash(sock))
         sockref = weakref.ref(sock, self._destroy)
-        object.__setattr__(sock, 'peer', peer)
-        object.__setattr__(sock, 'name', name)
+        object.__setattr__(sock, "peer", peer)
+        object.__setattr__(sock, "name", name)
         self._channels[channel] = ident
         self._channels[ident] = channel
         self._channels[sockref] = (ident, peer, name)
         close_socket = sock.close
+
         @functools.wraps(close_socket)
         def close(linger=None):
             self._destroy(sockref)
             sock.close = close_socket
             return close_socket(linger=linger)
+
         sock.close = close
         sock.connect(self.ADDRESS)
         return sock
+
     __call__ = create
 
     def _destroy(self, sockref):

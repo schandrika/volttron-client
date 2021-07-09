@@ -38,9 +38,8 @@
 
 import logging
 
-from volttron.utils import jsonapi
-from volttron.platform.agent.utils import (get_aware_utc_now,
-                                           format_timestamp)
+from volttron.utils import jsonapi, get_aware_utc_now, format_timestamp
+
 
 CURRENT_STATUS = "current_status"
 LAST_UPDATED = "utc_last_updated"
@@ -75,6 +74,7 @@ class Status(object):
     The build() method also takes a context and a callback function that will
     be called when the status changes.
     """
+
     def __init__(self):
         self._status = GOOD_STATUS
         self._context = None
@@ -109,11 +109,11 @@ class Status(object):
         :return:
         """
         if status not in ACCEPTABLE_STATUS:
-            raise ValueError('Invalid status value {}'.format(status))
+            raise ValueError("Invalid status value {}".format(status))
         try:
             jsonapi.dumps(context)
         except TypeError:
-            raise ValueError('Context must be JSON serializable.')
+            raise ValueError("Context must be JSON serializable.")
 
         status_changed = status != self._status
         self._status = status
@@ -129,8 +129,9 @@ class Status(object):
 
         @return:
         """
-        cp = dict(status=self.status, context=self.context,
-                  last_updated=self.last_updated)
+        cp = dict(
+            status=self.status, context=self.context, last_updated=self.last_updated
+        )
         return cp
 
     def as_json(self):
@@ -156,12 +157,12 @@ class Status(object):
         _log.debug("from_json {}".format(data))
         statusobj = Status()
         cp = jsonapi.loads(data)
-        cp['_status'] = cp['status']
-        cp['_last_updated'] = cp['last_updated']
-        cp['_context'] = cp['context']
-        del cp['status']
-        del cp['last_updated']
-        del cp['context']
+        cp["_status"] = cp["status"]
+        cp["_last_updated"] = cp["last_updated"]
+        cp["_context"] = cp["context"]
+        del cp["status"]
+        del cp["last_updated"]
+        del cp["context"]
         statusobj.__dict__ = cp
         statusobj._status_changed_callback = status_changed_callback
         return statusobj
@@ -181,4 +182,3 @@ class Status(object):
         statusobj.update_status(status, context)
         statusobj._status_changed_callback = status_changed_callback
         return statusobj
-

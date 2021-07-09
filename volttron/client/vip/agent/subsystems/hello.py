@@ -37,7 +37,6 @@
 # }}}
 
 
-
 import logging
 import weakref
 
@@ -46,14 +45,14 @@ from ..results import ResultsDictionary
 from zmq import ZMQError
 from zmq.green import ENOTSOCK
 
-__all__ = ['Hello']
+__all__ = ["Hello"]
 
 
 _log = logging.getLogger(__name__)
 
 
 class Hello(SubsystemBase):
-    """ The hello subsystem allows an agent to determine its identity.
+    """The hello subsystem allows an agent to determine its identity.
 
     The identity is possibly a dynamically generated uuid from which the
     executing agent does not know.  This subsystem allows the agent to be
@@ -64,10 +63,10 @@ class Hello(SubsystemBase):
     def __init__(self, core):
         self.core = weakref.ref(core)
         self._results = ResultsDictionary()
-        core.register('hello', self._handle_hello, self._handle_error)
+        core.register("hello", self._handle_hello, self._handle_error)
 
-    def hello(self, peer=''):
-        """ Receives a welcome message from the peer (default to '' router)
+    def hello(self, peer=""):
+        """Receives a welcome message from the peer (default to '' router)
 
          The welcome message will respond with a 3 element list:
 
@@ -81,42 +80,46 @@ class Hello(SubsystemBase):
         :param peer: The peer to receive the response from.
         :return: [version, peer, identity]
         """
-        _log.info('{0} Requesting hello from peer ({1})'.format(self.core().identity, peer))
+        _log.info(
+            "{0} Requesting hello from peer ({1})".format(self.core().identity, peer)
+        )
         result = next(self._results)
         connection = self.core().connection
         if not connection:
             _log.error("Connection object not yet created".format(self.core().identity))
         else:
             try:
-                connection.send_vip(peer, 'hello', args=['hello'], msg_id=result.ident)
+                connection.send_vip(peer, "hello", args=["hello"], msg_id=result.ident)
             except ZMQError as exc:
                 if exc.errno == ENOTSOCK:
-                    _log.error("Socket send on non socket {}".format(self.core().identity))
+                    _log.error(
+                        "Socket send on non socket {}".format(self.core().identity)
+                    )
 
         return result
 
     __call__ = hello
 
     def _handle_hello(self, message):
-        _log.info('Handling hello message {}'.format(message))
+        _log.info("Handling hello message {}".format(message))
         try:
             # zmq
             op = message.args[0]
         except IndexError:
-            _log.error('missing hello subsystem operation')
+            _log.error("missing hello subsystem operation")
             return
-        if op == 'hello':
-            message.user = ''
-            message.args = ['welcome', '1.0', self.core.identity, message.peer]
+        if op == "hello":
+            message.user = ""
+            message.args = ["welcome", "1.0", self.core.identity, message.peer]
             self.core().connection.send_vip_object(message, copy=False)
-        elif op == 'welcome':
+        elif op == "welcome":
             try:
                 result = self._results.pop(message.id)
             except KeyError:
                 return
             result.set([arg for arg in message.args[1:]])
         else:
-            _log.error('unknown hello subsystem operation')
+            _log.error("unknown hello subsystem operation")
 
     def _handle_error(self, sender, message, error, **kwargs):
         try:

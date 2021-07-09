@@ -41,25 +41,25 @@ import logging
 import weakref
 from enum import Enum
 
-from volttron.platform.agent.known_identities import PLATFORM_WEB
-from volttron.platform.vip.agent.subsystems.base import SubsystemBase
+from ....known_identities import PLATFORM_WEB
+from .base import SubsystemBase
 
-__docformat__ = 'reStructuredText'
+__docformat__ = "reStructuredText"
 
 _log = logging.getLogger(__name__)
 
 
 class ResourceType(Enum):
-    JSONRPC = 'jsonrpc'
-    ENDPOINT = 'endpoint'
-    RAW = 'raw'
+    JSONRPC = "jsonrpc"
+    ENDPOINT = "endpoint"
+    RAW = "raw"
     UNKNOWN = 99
 
 
 class WebSubSystem(SubsystemBase):
     """
     The web subsystem handles the agent side of routing web data from the
-    :class:`volttron.platform.web.PlatformWebService`.
+    :class:`volttron.client.web.PlatformWebService`.
 
     """
 
@@ -71,29 +71,30 @@ class WebSubSystem(SubsystemBase):
         self._ws_endpoint = {}
 
         def onsetup(sender, **kwargs):
-            rpc.export(self._opened, 'client.opened')
-            rpc.export(self._closed, 'client.closed')
-            rpc.export(self._message, 'client.message')
-            rpc.export(self._route_callback, 'route.callback')
+            rpc.export(self._opened, "client.opened")
+            rpc.export(self._closed, "client.closed")
+            rpc.export(self._message, "client.message")
+            rpc.export(self._route_callback, "route.callback")
 
         def onstop(sender, **kwargs):
-            rpc.call(PLATFORM_WEB, 'unregister_all_agent_routes')
+            rpc.call(PLATFORM_WEB, "unregister_all_agent_routes")
 
         core.onstop.connect(onstop, self)
         core.onsetup.connect(onsetup, self)
 
     def get_user_claims(self, bearer):
-        return self._rpc().call(PLATFORM_WEB, 'get_user_claims', bearer).get(timeout=10)
+        return self._rpc().call(PLATFORM_WEB, "get_user_claims", bearer).get(timeout=10)
 
     def unregister_all_routes(self):
-        self._rpc().call(PLATFORM_WEB, 'unregister_all_agent_routes').get(timeout=10)
+        self._rpc().call(PLATFORM_WEB, "unregister_all_agent_routes").get(timeout=10)
 
-    def register_endpoint(self, endpoint, callback,
-                          res_type: ResourceType = ResourceType.JSONRPC):
+    def register_endpoint(
+        self, endpoint, callback, res_type: ResourceType = ResourceType.JSONRPC
+    ):
         """
         The :meth:`register_endpoint` method registers an endpoint with the
         :param res_type:
-        :class:`volttron.platform.web.PlatformWebService` on the VOLTTRON
+        :class:`volttron.client.web.PlatformWebService` on the VOLTTRON
         instance.
 
         Each endpoint can map to at most one callback function.  The callback
@@ -113,11 +114,13 @@ class WebSubSystem(SubsystemBase):
         :type endpoint: str
         :type callback: function
         """
-        _log.info('Registering route endpoint: {}'.format(endpoint))
+        _log.info("Registering route endpoint: {}".format(endpoint))
         self._endpoints[endpoint] = callback
         if isinstance(res_type, ResourceType):
             res_type = res_type.value
-        self._rpc().call(PLATFORM_WEB, 'register_endpoint', endpoint, res_type).get(timeout=10)
+        self._rpc().call(PLATFORM_WEB, "register_endpoint", endpoint, res_type).get(
+            timeout=10
+        )
 
     def register_path(self, prefix, static_path):
         """
@@ -129,22 +132,20 @@ class WebSubSystem(SubsystemBase):
         :param prefix:
         :param static_path:
             An existing path available to the
-            :class:`volttron.platform.web.PlatformWebService`
+            :class:`volttron.client.web.PlatformWebService`
         :type prefix: str
         :type static_path: str
         """
-        _log.info('Registering path prefix: {}, path: {}'.format(
-            prefix, static_path
-        ))
-        self._rpc().call(PLATFORM_WEB, 'register_path_route', prefix,
-                         static_path).get(timeout=10)
+        _log.info("Registering path prefix: {}, path: {}".format(prefix, static_path))
+        self._rpc().call(PLATFORM_WEB, "register_path_route", prefix, static_path).get(
+            timeout=10
+        )
 
-    def register_websocket(self, endpoint, opened=None, closed=None,
-                           received=None):
+    def register_websocket(self, endpoint, opened=None, closed=None, received=None):
         """
         The :meth:`register_websocket` method registers a websocket endpoint
         that can be connected to through the
-        :class:`volttron.platform.web.PlatformWebService`.
+        :class:`volttron.client.web.PlatformWebService`.
 
         The parameters opened and closed can be specified as callback events
         with the following signature:
@@ -184,14 +185,12 @@ class WebSubSystem(SubsystemBase):
         """
         _log.info("Agent registering websocket at: {}".format(endpoint))
         self._ws_endpoint[endpoint] = (opened, closed, received)
-        self._rpc().call(PLATFORM_WEB, 'register_websocket', endpoint).get(
-            timeout=5)
+        self._rpc().call(PLATFORM_WEB, "register_websocket", endpoint).get(timeout=5)
 
     def unregister_websocket(self, endpoint):
-        self._rpc().call(PLATFORM_WEB, 'unregister_websocket', endpoint).get(
-            timeout=5)
+        self._rpc().call(PLATFORM_WEB, "unregister_websocket", endpoint).get(timeout=5)
 
-    def send(self, endpoint, message=''):
+    def send(self, endpoint, message=""):
         """
         The :meth:`send` method publishes data to the registered websocket
         clients that are subscribed to the passed endpoint.
@@ -205,11 +204,12 @@ class WebSubSystem(SubsystemBase):
         :type endpoint: str
         :type message: str
         """
-        self._rpc().call(PLATFORM_WEB, 'websocket_send', endpoint, message).get(
-            timeout=5)
+        self._rpc().call(PLATFORM_WEB, "websocket_send", endpoint, message).get(
+            timeout=5
+        )
 
     def _route_callback(self, env, data):
-        fn = self._endpoints.get(env['PATH_INFO'])
+        fn = self._endpoints.get(env["PATH_INFO"])
         if fn:
             _log.debug("Calling function: {}".format(fn.__name__))
             return fn(env, data)
@@ -217,12 +217,12 @@ class WebSubSystem(SubsystemBase):
         return None
 
     def _opened(self, fromip, endpoint):
-        _log.info('Client opened websocket ip: {} endpoint: {}'.format(
-            fromip, endpoint))
+        _log.info(
+            "Client opened websocket ip: {} endpoint: {}".format(fromip, endpoint)
+        )
         callbacks = self._ws_endpoint.get(endpoint)
         if callbacks is None:
-            _log.error('Websocket endpoint {} is not available'.format(
-                endpoint))
+            _log.error("Websocket endpoint {} is not available".format(endpoint))
         else:
             if callbacks[0]:
                 return callbacks[0](fromip, endpoint)
@@ -230,12 +230,11 @@ class WebSubSystem(SubsystemBase):
         return False
 
     def _closed(self, endpoint):
-        _log.info('Client closed websocket endpoint: {}'.format(endpoint))
+        _log.info("Client closed websocket endpoint: {}".format(endpoint))
 
         callbacks = self._ws_endpoint.get(endpoint)
         if callbacks is None:
-            _log.error('Websocket endpoint {} is not available'.format(
-                endpoint))
+            _log.error("Websocket endpoint {} is not available".format(endpoint))
         else:
             if callbacks[1]:
                 callbacks[1](endpoint)
@@ -244,8 +243,7 @@ class WebSubSystem(SubsystemBase):
 
         callbacks = self._ws_endpoint.get(endpoint)
         if callbacks is None:
-            _log.error('Websocket endpoint {} is not available'.format(
-                endpoint))
+            _log.error("Websocket endpoint {} is not available".format(endpoint))
         else:
             if callbacks[2]:
                 callbacks[2](endpoint, message)

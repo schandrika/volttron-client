@@ -39,4 +39,3 @@
 
 class SubsystemBase(object):
     pass
-

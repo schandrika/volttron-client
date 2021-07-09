@@ -37,11 +37,10 @@
 # }}}
 
 
-
 import weakref
 
 
-__all__ = ['Signal']
+__all__ = ["Signal"]
 
 
 class Signal(object):
@@ -59,13 +58,11 @@ class Signal(object):
             return False
 
     def send(self, sender, **kwargs):
-        return [receiver(sender, **kwargs)
-                for receiver in self._receivers]
+        return [receiver(sender, **kwargs) for receiver in self._receivers]
 
     def sendby(self, executor, sender, **kwargs):
-        return [executor(receiver, sender, **kwargs)
-                for receiver in self._receivers]
-        
+        return [executor(receiver, sender, **kwargs) for receiver in self._receivers]
+
     def receiver(self, func):
         self.connect(func)
         return func

@@ -36,35 +36,35 @@
 # under Contract DE-AC05-76RL01830
 # }}}
 
-'''VOLTTRON platform™ messaging utilities.'''
+"""VOLTTRON platform™ messaging utilities."""
 
 from string import _string, Formatter
 
 
-__all__ = ['normtopic', 'Topic']
+__all__ = ["normtopic", "Topic"]
 
-__author__ = 'Brandon Carpenter <brandon.carpenter@pnnl.gov>'
-__copyright__ = 'Copyright (c) 2016, Battelle Memorial Institute'
-__license__ = 'Apache 2.0'
+__author__ = "Brandon Carpenter <brandon.carpenter@pnnl.gov>"
+__copyright__ = "Copyright (c) 2016, Battelle Memorial Institute"
+__license__ = "Apache 2.0"
 
 
 def normtopic(topic):
-    '''Normalize topic, removing extra slashes and dots.'''
+    """Normalize topic, removing extra slashes and dots."""
     if not topic:
         return topic
     comps = []
-    for comp in topic.split('/'):
-        if comp in ('', '.'):
+    for comp in topic.split("/"):
+        if comp in ("", "."):
             continue
-        if comp == '..':
+        if comp == "..":
             comps.pop()
         else:
             comps.append(comp)
-    return '/'.join(comps)
+    return "/".join(comps)
 
 
 class TopicFormatter(Formatter):
-    '''Format topic strings allowing for optional fields.
+    """Format topic strings allowing for optional fields.
 
     TopicFormatter.format() works similar to the standard str.format()
     built-in, except that format strings may contain double forward
@@ -92,13 +92,16 @@ class TopicFormatter(Formatter):
 
     See the Formatter documentation for the built-in string module for
     more information on formatters and the role of each method.
-    '''
-    def _vformat(self, format_string, args, kwargs, used_args, recursion_depth, auto_arg_index=0):
+    """
+
+    def _vformat(
+        self, format_string, args, kwargs, used_args, recursion_depth, auto_arg_index=0
+    ):
         if recursion_depth < 0:
-            raise ValueError('maximum string recursion exceeded')
+            raise ValueError("maximum string recursion exceeded")
         result = []
         for platformral, name, format_spec, conversion in self.parse(format_string):
-            if conversion in ['S', 'R']:
+            if conversion in ["S", "R"]:
                 optional = True
                 conversion = conversion.lower()
             else:
@@ -112,7 +115,7 @@ class TopicFormatter(Formatter):
             except (KeyError, AttributeError) as e:
                 if platformral:
                     try:
-                        platformral, _ = platformral.rsplit('//', 1)
+                        platformral, _ = platformral.rsplit("//", 1)
                     except ValueError:
                         pass
                     else:
@@ -123,36 +126,42 @@ class TopicFormatter(Formatter):
                 raise e
             used_args.add(arg_used)
             if obj is None:
-                obj = '{{{}{}{}{}{}}}'.format(name,
-                        '!' if conversion else '', conversion or '',
-                        ':' if format_spec else '', format_spec or '')
+                obj = "{{{}{}{}{}{}}}".format(
+                    name,
+                    "!" if conversion else "",
+                    conversion or "",
+                    ":" if format_spec else "",
+                    format_spec or "",
+                )
             else:
                 obj = self.convert_field(obj, conversion)
-                format_spec, auto_arg_index = self._vformat(format_spec, args, kwargs,
-                                            used_args, recursion_depth - 1)
+                format_spec, auto_arg_index = self._vformat(
+                    format_spec, args, kwargs, used_args, recursion_depth - 1
+                )
                 obj = self.format_field(obj, format_spec)
             result.append(obj)
-        return ''.join(result), auto_arg_index
+        return "".join(result), auto_arg_index
 
     def check_unused_args(self, used_args, args, kwargs):
         for name in kwargs:
             if name not in used_args:
-                raise ValueError('unused keyword argument: {}'.format(name))
+                raise ValueError("unused keyword argument: {}".format(name))
 
 
 class Topic(str):
-
     def __init__(self, format_string):
-        '''Perform minimal validation of names used in format fields.'''
+        """Perform minimal validation of names used in format fields."""
         for _, name, _, _ in _string.formatter_parser(format_string):
             if name is None:
                 continue
             name, _ = _string.formatter_field_name_split(name)
             if isinstance(name, int) or not name:
-                raise ValueError('positional format fields are not supported;'
-                                 ' use named format fields only')
+                raise ValueError(
+                    "positional format fields are not supported;"
+                    " use named format fields only"
+                )
             if name[:1].isdigit():
-                raise ValueError('invalid format field name: {}'.format(name))
+                raise ValueError("invalid format field name: {}".format(name))
 
     def __call__(self, **kwargs):
         return self.__class__(normtopic(self.vformat(kwargs)))
@@ -168,10 +177,8 @@ class Topic(str):
         return formatter.vformat(self, (), kwargs)
 
     def __repr__(self):
-        return '{}({})'.format(self.__class__.__name__,
-                               super(Topic, self).__repr__())
+        return "{}({})".format(self.__class__.__name__, super(Topic, self).__repr__())
 
 
 class Header(str):
     pass
-

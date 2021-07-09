@@ -40,10 +40,10 @@ import logging
 import os
 import weakref
 
-from volttron.platform.agent.utils import get_fq_identity
-from volttron.platform.messaging import topics
-from volttron.platform.messaging.headers import DATE
-from volttron.platform.messaging.health import *
+from volttron.client.agent.utils import get_fq_identity
+from volttron.client.messaging import topics
+from volttron.client.messaging.headers import DATE
+from volttron.client.messaging.health import *
 from .base import SubsystemBase
 
 """
@@ -51,8 +51,8 @@ The health subsystem allows an agent to store it's health in a non-intrusive
 way.
 """
 
-__docformat__ = 'reStructuredText'
-__version__ = '1.1'
+__docformat__ = "reStructuredText"
+__version__ = "1.1"
 
 _log = logging.getLogger(__name__)
 
@@ -63,14 +63,15 @@ class Health(SubsystemBase):
         self._core = weakref.ref(core)
         self._rpc = weakref.ref(rpc)
         self._statusobj = Status.build(
-            STATUS_GOOD, status_changed_callback=self._status_changed)
+            STATUS_GOOD, status_changed_callback=self._status_changed
+        )
         self._status_callbacks = set()
 
         def onsetup(sender, **kwargs):
-            rpc.export(self.set_status, 'health.set_status')
-            rpc.export(self.get_status, 'health.get_status')
-            rpc.export(self.get_status, 'health.get_status_json')
-            rpc.export(self.send_alert, 'health.send_alert')
+            rpc.export(self.set_status, "health.set_status")
+            rpc.export(self.get_status, "health.get_status")
+            rpc.export(self.get_status, "health.get_status_json")
+            rpc.export(self.send_alert, "health.send_alert")
 
         core.onsetup.connect(onsetup, self)
 
@@ -85,18 +86,19 @@ class Health(SubsystemBase):
         :return:
         """
         if not isinstance(statusobj, Status):
-            raise ValueError('statusobj must be a Status object.')
+            raise ValueError("statusobj must be a Status object.")
         agent_class = self._owner.__class__.__name__
         fq_identity = get_fq_identity(self._core().identity)
         # RMQ and other message buses can't handle '.' because it's used as the separator.  This
         # causes us to change the alert topic's agent_identity to have '_' rather than '.'.
-        topic = topics.ALERTS(agent_class=agent_class, agent_identity=fq_identity.replace('.', '_'))
+        topic = topics.ALERTS(
+            agent_class=agent_class, agent_identity=fq_identity.replace(".", "_")
+        )
         headers = dict(alert_key=alert_key)
 
-        self._owner.vip.pubsub.publish("pubsub",
-                                       topic=topic.format(),
-                                       headers=headers,
-                                       message=statusobj.as_json()).get(timeout=10)
+        self._owner.vip.pubsub.publish(
+            "pubsub", topic=topic.format(), headers=headers, message=statusobj.as_json()
+        ).get(timeout=10)
 
     def add_status_callback(self, fn):
         """
@@ -113,7 +115,7 @@ class Health(SubsystemBase):
         self._status_callbacks.add(fn)
 
     def _status_changed(self):
-        """ Internal function that happens when the status changes state.
+        """Internal function that happens when the status changes state.
         :return:
         """
         remove = set()
@@ -139,7 +141,7 @@ class Health(SubsystemBase):
         self._statusobj.update_status(status, context)
 
     def get_status(self):
-        """"RPC method
+        """ "RPC method
 
         Returns the last updated status from the object with the context.
 
@@ -152,14 +154,14 @@ class Health(SubsystemBase):
             }
 
         """
-        return self._statusobj.as_dict() #.as_json()
+        return self._statusobj.as_dict()  # .as_json()
 
     # TODO fetch status value from status object
     def get_status_value(self):
         return self._statusobj.status
 
     def get_status_json(self):
-        """"RPC method
+        """ "RPC method
 
         Returns the last updated status from the object with the context.
 
@@ -178,8 +180,8 @@ class Health(SubsystemBase):
     # TODO fix topic
     # TODO fix self.core
     def publish(self):
-        topic = 'heartbeat/' + self.core().identity
+        topic = "heartbeat/" + self.core().identity
         headers = {DATE: format_timestamp(get_aware_utc_now())}
         message = self.get_status()
 
-        self.pubsub().publish('pubsub', topic, headers, message)
+        self.pubsub().publish("pubsub", topic, headers, message)

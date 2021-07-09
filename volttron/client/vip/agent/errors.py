@@ -37,11 +37,10 @@
 # }}}
 
 
-
 import errno
 
 
-__all__ = ['VIPError', 'Unreachable', 'Again', 'UnknownSubsystem']
+__all__ = ["VIPError", "Unreachable", "Again", "UnknownSubsystem"]
 
 
 class VIPError(Exception):
@@ -53,10 +52,10 @@ class VIPError(Exception):
         self.subsystem = subsystem
 
     def __str__(self):
-        return 'VIP error (%d): %s' % (self.errno, self.msg)
+        return "VIP error (%d): %s" % (self.errno, self.msg)
 
     def __repr__(self):
-        return '%s%r' % (type(self).__name__, self.args)
+        return "%s%r" % (type(self).__name__, self.args)
 
     @classmethod
     def from_errno(cls, errnum, msg, *args):
@@ -70,7 +69,7 @@ class VIPError(Exception):
 
 class Unreachable(VIPError):
     def __str__(self):
-        return '%s: %s' % (super(Unreachable, self).__str__(), self.peer)
+        return "%s: %s" % (super(Unreachable, self).__str__(), self.peer)
 
 
 class Again(VIPError):
@@ -79,5 +78,4 @@ class Again(VIPError):
 
 class UnknownSubsystem(VIPError):
     def __str__(self):
-        return '%s: %s' % (
-            super(UnknownSubsystem, self).__str__(), self.subsystem)
+        return "%s: %s" % (super(UnknownSubsystem, self).__str__(), self.subsystem)

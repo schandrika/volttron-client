@@ -46,14 +46,22 @@ import weakref
 from .base import SubsystemBase
 
 from volttron.utils import jsonapi
-# from volttron.platform.vip.agent import Agent
-from volttron.platform.agent.known_identities import AUTH
-#from volttron.platform.keystore import KnownHostsStore
-from volttron.platform.agent.utils import get_platform_instance_name, get_fq_identity, get_messagebus
-#from volttron.platform.certs import Certs
+
+# from volttron.client.vip.agent import Agent
+from volttron.client.agent.known_identities import AUTH
+
+# from volttron.client.keystore import KnownHostsStore
+from volttron.client.agent.utils import (
+    get_platform_instance_name,
+    get_fq_identity,
+    get_messagebus,
+)
+
+# from volttron.client.certs import Certs
 from volttron.utils.jsonrpc import RemoteError
-#from volttron.platform.jsonrpc import RemoteError
-#from volttron.utils.rmq_config_params import RMQConfig
+
+# from volttron.client.jsonrpc import RemoteError
+# from volttron.utils.rmq_config_params import RMQConfig
 from volttron.utils.keystore import KeyStore
 
 """
@@ -61,8 +69,8 @@ The auth subsystem allows an agent to quickly query authorization state
 (e.g., which capabilities each user has been granted).
 """
 
-__docformat__ = 'reStructuredText'
-__version__ = '1.1'
+__docformat__ = "reStructuredText"
+__version__ = "1.1"
 
 _log = logging.getLogger(__name__)
 
@@ -78,12 +86,17 @@ class Auth(SubsystemBase):
         self.remote_certs_dir = None
 
         def onsetup(sender, **kwargs):
-            rpc.export(self._update_capabilities, 'auth.update')
+            rpc.export(self._update_capabilities, "auth.update")
 
         core.onsetup.connect(onsetup, self)
 
-    def connect_remote_platform(self, address, serverkey=None,
-                                agent_class: "Agent" = None, keystore: KeyStore = None) -> Union["Agent", None]:
+    def connect_remote_platform(
+        self,
+        address,
+        serverkey=None,
+        agent_class: "Agent" = None,
+        keystore: KeyStore = None,
+    ) -> Union["Agent", None]:
         """
         Agent atempts to connect to a remote platform to exchange data.
 
@@ -103,8 +116,8 @@ class Auth(SubsystemBase):
         function.
 
         """
-        from volttron.platform.vip.agent.utils import build_agent
-        from volttron.platform.vip.agent import Agent
+        from volttron.client.vip.agent.utils import build_agent
+        from volttron.client.vip.agent import Agent
 
         if agent_class is None:
             agent_class = Agent
@@ -113,72 +126,95 @@ class Auth(SubsystemBase):
         _log.debug("Begining auth.connect_remote_platform: {}".format(address))
 
         value = None
-        if parsed_address.scheme == 'tcp':
+        if parsed_address.scheme == "tcp":
             # ZMQ connection
             hosts = KnownHostsStore()
             temp_serverkey = hosts.serverkey(address)
             if not temp_serverkey:
-                _log.info("Destination serverkey not found in known hosts file, using config")
+                _log.info(
+                    "Destination serverkey not found in known hosts file, using config"
+                )
                 destination_serverkey = serverkey
             elif not serverkey:
                 destination_serverkey = temp_serverkey
             else:
                 if temp_serverkey != serverkey:
-                    raise ValueError("server_key passed and known hosts serverkey do not match!")
+                    raise ValueError(
+                        "server_key passed and known hosts serverkey do not match!"
+                    )
                 destination_serverkey = serverkey
 
             publickey, secretkey = self._core().publickey, self._core().secretkey
-            _log.debug("Connecting using: {}".format(get_fq_identity(self._core().identity)))
+            _log.debug(
+                "Connecting using: {}".format(get_fq_identity(self._core().identity))
+            )
 
-            value = build_agent(agent_class=agent_class,
-                                identity=get_fq_identity(self._core().identity),
-                                serverkey=destination_serverkey,
-                                publickey=publickey,
-                                secretkey=secretkey,
-                                message_bus='zmq',
-                                address=address)
-        elif parsed_address.scheme in ('https', 'http'):
-            from volttron.platform.web import DiscoveryInfo
-            from volttron.platform.web import DiscoveryError
+            value = build_agent(
+                agent_class=agent_class,
+                identity=get_fq_identity(self._core().identity),
+                serverkey=destination_serverkey,
+                publickey=publickey,
+                secretkey=secretkey,
+                message_bus="zmq",
+                address=address,
+            )
+        elif parsed_address.scheme in ("https", "http"):
+            from volttron.client.web import DiscoveryInfo
+            from volttron.client.web import DiscoveryError
+
             try:
                 # TODO: Use known host instead of looking up for discovery info if possible.
 
                 # We need to discover which type of bus is at the other end.
                 info = DiscoveryInfo.request_discovery_info(address)
-                remote_identity = "{}.{}.{}".format(info.instance_name,
-                                                    get_platform_instance_name(),
-                                                    self._core().identity)
+                remote_identity = "{}.{}.{}".format(
+                    info.instance_name,
+                    get_platform_instance_name(),
+                    self._core().identity,
+                )
                 # if the current message bus is zmq then we need
                 # to connect a zmq on the remote, whether that be the
                 # rmq router or proxy.  Also note that we are using the fully qualified
                 # version of the identity because there will be conflicts if
                 # volttron central has more than one platform.agent connecting
-                if get_messagebus() == 'zmq':
+                if get_messagebus() == "zmq":
                     if not info.vip_address or not info.serverkey:
-                        err = "Discovery from {} did not return serverkey and/or vip_address".format(address)
+                        err = "Discovery from {} did not return serverkey and/or vip_address".format(
+                            address
+                        )
                         raise ValueError(err)
 
-                    _log.debug("Connecting using: {}".format(get_fq_identity(self._core().identity)))
+                    _log.debug(
+                        "Connecting using: {}".format(
+                            get_fq_identity(self._core().identity)
+                        )
+                    )
 
                     # use fully qualified identity
-                    value = build_agent(identity=get_fq_identity(self._core().identity),
-                                        address=info.vip_address,
-                                        serverkey=info.serverkey,
-                                        secretkey=self._core().secretkey,
-                                        publickey=self._core().publickey,
-                                        agent_class=agent_class)
+                    value = build_agent(
+                        identity=get_fq_identity(self._core().identity),
+                        address=info.vip_address,
+                        serverkey=info.serverkey,
+                        secretkey=self._core().secretkey,
+                        publickey=self._core().publickey,
+                        agent_class=agent_class,
+                    )
 
                 else:  # we are on rmq messagebus
 
                     # This is if both remote and local are rmq message buses.
-                    if info.messagebus_type == 'rmq':
+                    if info.messagebus_type == "rmq":
                         _log.debug("Both remote and local are rmq messagebus.")
                         fqid_local = get_fq_identity(self._core().identity)
 
-                        #Check if we already have the cert, if so use it instead of requesting cert again
+                        # Check if we already have the cert, if so use it instead of requesting cert again
                         remote_certs_dir = self.get_remote_certs_dir()
-                        remote_cert_name = "{}.{}".format(info.instance_name, fqid_local)
-                        certfile = os.path.join(remote_certs_dir, remote_cert_name + ".crt")
+                        remote_cert_name = "{}.{}".format(
+                            info.instance_name, fqid_local
+                        )
+                        certfile = os.path.join(
+                            remote_certs_dir, remote_cert_name + ".crt"
+                        )
                         if os.path.exists(certfile):
                             response = certfile
                         else:
@@ -188,8 +224,10 @@ class Auth(SubsystemBase):
                             _log.error("there was no response from the server")
                             value = None
                         elif isinstance(response, tuple):
-                            if response[0] == 'PENDING':
-                                _log.info("Waiting for administrator to accept a CSR request.")
+                            if response[0] == "PENDING":
+                                _log.info(
+                                    "Waiting for administrator to accept a CSR request."
+                                )
                             value = None
                         # elif isinstance(response, dict):
                         #     response
@@ -199,22 +237,27 @@ class Auth(SubsystemBase):
                             #   remoteinstance.localinstance.identity, this is what we must
                             #   pass to the build_remote_connection_params for a successful
 
-                            remote_rmq_user = get_fq_identity(fqid_local, info.instance_name)
+                            remote_rmq_user = get_fq_identity(
+                                fqid_local, info.instance_name
+                            )
                             _log.debug("REMOTE RMQ USER IS: {}".format(remote_rmq_user))
                             remote_rmq_address = self._core().rmq_mgmt.build_remote_connection_param(
                                 remote_rmq_user,
                                 info.rmq_address,
                                 ssl_auth=True,
-                                cert_dir=self.get_remote_certs_dir())
+                                cert_dir=self.get_remote_certs_dir(),
+                            )
 
-                            value = build_agent(identity=fqid_local,
-                                                address=remote_rmq_address,
-                                                instance_name=info.instance_name,
-                                                publickey=self._core().publickey,
-                                                secretkey=self._core().secretkey,
-                                                message_bus='rmq',
-                                                enable_store=False,
-                                                agent_class=agent_class)
+                            value = build_agent(
+                                identity=fqid_local,
+                                address=remote_rmq_address,
+                                instance_name=info.instance_name,
+                                publickey=self._core().publickey,
+                                secretkey=self._core().secretkey,
+                                message_bus="rmq",
+                                enable_store=False,
+                                agent_class=agent_class,
+                            )
                         else:
                             raise ValueError("Unknown path through discovery process!")
 
@@ -225,26 +268,38 @@ class Auth(SubsystemBase):
                         # This branch happens when the message bus is not the same note
                         # this writes to the agent-data directory of this agent if the agent
                         # is installed.
-                        if get_messagebus() == 'rmq':
+                        if get_messagebus() == "rmq":
                             if not os.path.exists("keystore.json"):
-                                with open("keystore.json", 'w') as fp:
-                                    fp.write(jsonapi.dumps(KeyStore.generate_keypair_dict()))
+                                with open("keystore.json", "w") as fp:
+                                    fp.write(
+                                        jsonapi.dumps(KeyStore.generate_keypair_dict())
+                                    )
 
                             with open("keystore.json") as fp:
                                 keypair = jsonapi.loads(fp.read())
 
-                        value = build_agent(agent_class=agent_class,
-                                            identity=remote_identity,
-                                            serverkey=info.serverkey,
-                                            publickey=keypair.get('publickey'),
-                                            secretkey=keypair.get('secretekey'),
-                                            message_bus='zmq',
-                                            address=info.vip_address)
+                        value = build_agent(
+                            agent_class=agent_class,
+                            identity=remote_identity,
+                            serverkey=info.serverkey,
+                            publickey=keypair.get("publickey"),
+                            secretkey=keypair.get("secretekey"),
+                            message_bus="zmq",
+                            address=info.vip_address,
+                        )
             except DiscoveryError:
-                _log.error("Couldn't connect to {} or incorrect response returned response was {}".format(address, value))
+                _log.error(
+                    "Couldn't connect to {} or incorrect response returned response was {}".format(
+                        address, value
+                    )
+                )
 
         else:
-            raise ValueError("Invalid configuration found the address: {} has an invalid scheme".format(address))
+            raise ValueError(
+                "Invalid configuration found the address: {} has an invalid scheme".format(
+                    address
+                )
+            )
 
         return value
 
@@ -262,7 +317,7 @@ class Auth(SubsystemBase):
     #     if get_messagebus() != 'rmq':
     #         raise ValueError("Only can create csr for rabbitmq based platform in ssl mode.")
     #
-    #     # from volttron.platform.web import DiscoveryInfo
+    #     # from volttron.client.web import DiscoveryInfo
     #     config = RMQConfig()
     #
     #     if not config.is_ssl:
@@ -341,7 +396,7 @@ class Auth(SubsystemBase):
     #     else:
     #         return status, message
 
-    #TODO Figure out certs
+    # TODO Figure out certs
     # def get_remote_certs_dir(self):
     #     if not self.remote_certs_dir:
     #         install_dir = os.path.join(get_home(), "agents", self._core().agent_uuid)
@@ -361,8 +416,9 @@ class Auth(SubsystemBase):
         while self._dirty:
             self._dirty = False
             try:
-                self._user_to_capabilities = self._rpc().call(AUTH,
-                    'get_user_to_capabilities').get(timeout=10)
+                self._user_to_capabilities = (
+                    self._rpc().call(AUTH, "get_user_to_capabilities").get(timeout=10)
+                )
                 _log.debug("self. user to cap {}".format(self._user_to_capabilities))
             except RemoteError:
                 self._dirty = True
@@ -383,4 +439,3 @@ class Auth(SubsystemBase):
         if identity == AUTH:
             self._user_to_capabilities = user_to_capabilities
             self._dirty = True
-
