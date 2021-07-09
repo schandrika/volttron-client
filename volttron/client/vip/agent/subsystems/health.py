@@ -40,7 +40,7 @@ import logging
 import os
 import weakref
 
-from volttron.client.agent.utils import get_fq_identity
+from volttron.utils import ClientContext as cc
 from volttron.client.messaging import topics
 from volttron.client.messaging.headers import DATE
 from volttron.client.messaging.health import *

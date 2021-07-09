@@ -47,7 +47,6 @@ from .heartbeat import Heartbeat
 from .health import Health
 from .configstore import ConfigStore
 from .auth import Auth
-from .volttronfncs import FNCS
 from .rmq_pubsub import RMQPubSub
 
 __all__ = [
@@ -61,6 +60,5 @@ __all__ = [
     "Heartbeat",
     "Health",
     "ConfigStore",
-    "Auth",
-    "FNCS",
+    "Auth"
 ]

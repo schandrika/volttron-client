@@ -46,7 +46,8 @@ from .errors import *
 from .decorators import *
 from .subsystems import *
 
-from volttron.utils import is_valid_identity, get_address
+from volttron.utils import is_valid_identity, get_address, ClientContext as cc
+from volttron.utils.keystore import get_server_keys
 
 
 class Agent(object):
@@ -60,7 +61,6 @@ class Agent(object):
             enable_store,
             enable_web,
             enable_channel,
-            enable_fncs,
             message_bus,
         ):
             self.peerlist = PeerList(core)
@@ -88,8 +88,7 @@ class Agent(object):
             if enable_web:
                 self.web = WebSubSystem(owner, core, self.rpc)
             self.auth = Auth(owner, core, self.rpc)
-            if enable_fncs:
-                self.fncs = FNCS(owner, core, self.pubsub)
+
 
     def __init__(
         self,
@@ -110,7 +109,6 @@ class Agent(object):
         enable_channel=False,
         reconnect_interval=None,
         version="0.1",
-        enable_fncs=False,
         instance_name=None,
         message_bus=None,
         volttron_central_address=None,
@@ -118,7 +116,7 @@ class Agent(object):
     ):
 
         if volttron_home is None:
-            volttron_home = os.path.abspath(client.get_home())
+            volttron_home = cc.get_volttron_home()
 
         try:
             self._version = version
@@ -163,8 +161,7 @@ class Agent(object):
                     volttron_home=volttron_home,
                     agent_uuid=agent_uuid,
                     reconnect_interval=reconnect_interval,
-                    version=version,
-                    enable_fncs=enable_fncs,
+                    version=version
                 )
             self.vip = Agent.Subsystems(
                 self,
@@ -174,7 +171,6 @@ class Agent(object):
                 enable_store,
                 enable_web,
                 enable_channel,
-                enable_fncs,
                 message_bus,
             )
             self.core.setup()
@@ -226,11 +222,9 @@ def build_agent(
     # the one that is currently running.
     if publickey is None or secretkey is None:
         publickey, secretkey = get_server_keys()
-    try:
-        message_bus = kwargs.pop("message_bus")
-    except KeyError:
-        message_bus = os.environ.get("MESSAGEBUS", "zmq")
 
+    message_bus = cc.get_messagebus()
+    
     try:
         enable_store = kwargs.pop("enable_store")
     except KeyError:

@@ -43,12 +43,11 @@ import os
 import gevent
 
 from volttron.client import get_address
-from volttron.client.agent import utils
-from volttron.client.keystore import KeyStore, KnownHostsStore
+from volttron.utils.keystore import KeyStore, KnownHostsStore
 from volttron.client.vip.agent import Agent
 from volttron.client.vip.agent.connection import Connection
 
-utils.setup_logging()
+
 _log = logging.getLogger(__name__)
 
 host_store = KnownHostsStore()

@@ -52,13 +52,14 @@ from collections import defaultdict
 import requests
 from requests.packages.urllib3.connection import ConnectionError, NewConnectionError
 
-from volttron.client import is_rabbitmq_available
+from volttron.utils import ClientContext as cc
+
 from volttron.utils import jsonapi
 from ..decorators import annotate, annotations, dualmethod, spawn
 from ..errors import Unreachable
 from ..results import ResultsDictionary
 
-if is_rabbitmq_available():
+if cc.is_rabbitmq_available():
     import pika
 
 

@@ -41,6 +41,7 @@ import heapq
 import inspect
 import logging
 import os
+from pathlib import Path
 import platform as python_platform
 import signal
 import threading
@@ -66,7 +67,8 @@ from volttron.utils import ClientContext as cc
 # TODO add back rabbitmq
 # from volttron.client.keystore import KeyStore, KnownHostsStore
 # from volttron.utils.rmq_mgmt import RabbitMQMgmt
-from volttron.utils.keystore import KeyStore
+from volttron import utils
+from volttron.utils.keystore import KeyStore, KnownHostsStore
 from .decorators import annotate, annotations, dualmethod
 from .dispatch import Signal
 from .errors import VIPError
@@ -664,7 +666,6 @@ class ZMQCore(Core):
         agent_uuid=None,
         reconnect_interval=None,
         version="0.1",
-        enable_fncs=False,
         instance_name=None,
         messagebus="zmq",
     ):
@@ -687,7 +688,6 @@ class ZMQCore(Core):
             messagebus=messagebus,
         )
         self.context = context or zmq.Context.instance()
-        self._fncs_enabled = enable_fncs
         self.messagebus = messagebus
         self._set_keys()
 
@@ -743,28 +743,24 @@ class ZMQCore(Core):
         if self.serverkey is None:
             self.serverkey = self._get_keys_from_addr()[2]
 
-        if self.serverkey is None:
-            raise ValueError("Serverkey was not set properly!")
-        # known_serverkey = self._get_serverkey_from_known_hosts()
-        #
-        # if (self.serverkey is not None and known_serverkey is not None
-        #         and self.serverkey != known_serverkey):
-        #     raise Exception("Provided server key ({}) for {} does "
-        #                     "not match known serverkey ({}).".format(
-        #         self.serverkey, self.address, known_serverkey))
+        known_serverkey = self._get_serverkey_from_known_hosts()
+        
+        if (self.serverkey is not None and known_serverkey is not None
+                and self.serverkey != known_serverkey):
+            raise Exception("Provided server key ({}) for {} does "
+                            "not match known serverkey ({}).".format(
+                self.serverkey, self.address, known_serverkey))
 
-        # # Until we have containers for agents we should not require all
-        # # platforms that connect to be in the known host file.
-        # # See issue https://github.com/VOLTTRON/volttron/issues/1117
-        # if known_serverkey is not None:
-        #     self.serverkey = known_serverkey
+        # Until we have containers for agents we should not require all
+        # platforms that connect to be in the known host file.
+        # See issue https://github.com/VOLTTRON/volttron/issues/1117
+        if known_serverkey is not None:
+            self.serverkey = known_serverkey
 
     def _get_serverkey_from_known_hosts(self):
-        return "ElFyUsn0sbF6vPrGBTtVVOMDqPzOOVXpnLUA-RJpkEo"
-        # TODO serverkey hard coded
-        # known_hosts_file = os.path.join(self.volttron_home, 'known_hosts')
-        # known_hosts = KnownHostsStore(known_hosts_file)
-        # return known_hosts.serverkey(self.address)
+        known_hosts_file = f"{cc.get_volttron_home()}/known_hosts"
+        known_hosts = KnownHostsStore(known_hosts_file)
+        return known_hosts.serverkey(self.address)
 
     def _get_keys_from_addr(self):
         url = list(urlsplit(self.address))
@@ -992,8 +988,7 @@ if cc.is_rabbitmq_available():
             # if instance_name is specified as a parameter in this calls it will be because it is
             # a remote connection. So we load it from the platform configuration file
             if not instance_name:
-                config_opts = load_platform_config()
-                self.instance_name = config_opts.get("instance-name")
+                self.instance_name = cc.get_instance_name()
             else:
                 self.instance_name = instance_name
 
@@ -1037,7 +1032,7 @@ if cc.is_rabbitmq_available():
                 raise ValueError("Agent's VIP identity is not set")
             else:
                 try:
-                    if self.instance_name == get_platform_instance_name():
+                    if self.instance_name == cc.get_instance_name():
                         param = self.rmq_mgmt.build_agent_connection(
                             self.identity, self.instance_name
                         )

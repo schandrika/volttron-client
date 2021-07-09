@@ -43,25 +43,11 @@ from typing import Union
 from urllib.parse import urlparse
 import weakref
 
-from .base import SubsystemBase
+from . base import SubsystemBase
 
-from volttron.utils import jsonapi
-
-# from volttron.client.vip.agent import Agent
-from volttron.client.agent.known_identities import AUTH
-
-# from volttron.client.keystore import KnownHostsStore
-from volttron.client.agent.utils import (
-    get_platform_instance_name,
-    get_fq_identity,
-    get_messagebus,
-)
-
-# from volttron.client.certs import Certs
+from volttron.client.known_identities import AUTH
+from volttron.utils import ClientContext as cc, jsonapi
 from volttron.utils.jsonrpc import RemoteError
-
-# from volttron.client.jsonrpc import RemoteError
-# from volttron.utils.rmq_config_params import RMQConfig
 from volttron.utils.keystore import KeyStore
 
 """
@@ -146,12 +132,12 @@ class Auth(SubsystemBase):
 
             publickey, secretkey = self._core().publickey, self._core().secretkey
             _log.debug(
-                "Connecting using: {}".format(get_fq_identity(self._core().identity))
+                "Connecting using: {}".format(cc.get_fq_identity(self._core().identity))
             )
 
             value = build_agent(
                 agent_class=agent_class,
-                identity=get_fq_identity(self._core().identity),
+                identity=cc.get_fq_identity(self._core().identity),
                 serverkey=destination_serverkey,
                 publickey=publickey,
                 secretkey=secretkey,
@@ -169,7 +155,7 @@ class Auth(SubsystemBase):
                 info = DiscoveryInfo.request_discovery_info(address)
                 remote_identity = "{}.{}.{}".format(
                     info.instance_name,
-                    get_platform_instance_name(),
+                    cc.get_instance_name(),
                     self._core().identity,
                 )
                 # if the current message bus is zmq then we need
@@ -177,7 +163,7 @@ class Auth(SubsystemBase):
                 # rmq router or proxy.  Also note that we are using the fully qualified
                 # version of the identity because there will be conflicts if
                 # volttron central has more than one platform.agent connecting
-                if get_messagebus() == "zmq":
+                if cc.get_messagebus() == "zmq":
                     if not info.vip_address or not info.serverkey:
                         err = "Discovery from {} did not return serverkey and/or vip_address".format(
                             address
@@ -186,13 +172,13 @@ class Auth(SubsystemBase):
 
                     _log.debug(
                         "Connecting using: {}".format(
-                            get_fq_identity(self._core().identity)
+                            cc.get_fq_identity(self._core().identity)
                         )
                     )
 
                     # use fully qualified identity
                     value = build_agent(
-                        identity=get_fq_identity(self._core().identity),
+                        identity=cc.get_fq_identity(self._core().identity),
                         address=info.vip_address,
                         serverkey=info.serverkey,
                         secretkey=self._core().secretkey,
@@ -205,7 +191,7 @@ class Auth(SubsystemBase):
                     # This is if both remote and local are rmq message buses.
                     if info.messagebus_type == "rmq":
                         _log.debug("Both remote and local are rmq messagebus.")
-                        fqid_local = get_fq_identity(self._core().identity)
+                        fqid_local = cc.get_fq_identity(self._core().identity)
 
                         # Check if we already have the cert, if so use it instead of requesting cert again
                         remote_certs_dir = self.get_remote_certs_dir()
@@ -237,7 +223,7 @@ class Auth(SubsystemBase):
                             #   remoteinstance.localinstance.identity, this is what we must
                             #   pass to the build_remote_connection_params for a successful
 
-                            remote_rmq_user = get_fq_identity(
+                            remote_rmq_user = cc.get_fq_identity(
                                 fqid_local, info.instance_name
                             )
                             _log.debug("REMOTE RMQ USER IS: {}".format(remote_rmq_user))
@@ -268,7 +254,7 @@ class Auth(SubsystemBase):
                         # This branch happens when the message bus is not the same note
                         # this writes to the agent-data directory of this agent if the agent
                         # is installed.
-                        if get_messagebus() == "rmq":
+                        if cc.get_messagebus() == "rmq":
                             if not os.path.exists("keystore.json"):
                                 with open("keystore.json", "w") as fp:
                                     fp.write(
@@ -314,7 +300,7 @@ class Auth(SubsystemBase):
     #     :return:
     #     """
     #
-    #     if get_messagebus() != 'rmq':
+    #     if cc.get_messagebus() != 'rmq':
     #         raise ValueError("Only can create csr for rabbitmq based platform in ssl mode.")
     #
     #     # from volttron.client.web import DiscoveryInfo
@@ -342,7 +328,7 @@ class Auth(SubsystemBase):
     #
     #     json_request = dict(
     #         csr=csr_request.decode("utf-8"),
-    #         identity=remote_cert_name,  # get_platform_instance_name()+"."+self._core().identity,
+    #         identity=remote_cert_name,  # cc.get_instance_name()+"."+self._core().identity,
     #         hostname=config.hostname
     #     )
     #     request = grequests.post(csr_server + "/csr/request_new",
