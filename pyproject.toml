@@ -26,8 +26,8 @@ pytz = ">=2019,<2022"
 tzlocal = ">=2,<3"
 dateutils = ">=0.6,<0.7"
 grequests = "^0.6.0"
-# volttron-utils = "^0.1.0"
-volttron-utils = { path="../volttron-utils", develop=true}
+volttron-utils = "^0.2.0"
+# volttron-utils = { path="../volttron-utils", develop=true}
 psutil = "^5.8.0"
 toml = "^0.10.2"
 
