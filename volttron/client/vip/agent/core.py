@@ -60,7 +60,7 @@ from zmq import green as zmq
 from zmq.green import ZMQError, EAGAIN, ENOTSOCK
 from zmq.utils.monitor import recv_monitor_message
 
-from volttron.utils import ClientContext as cc
+from volttron.utils import ClientContext as cc, get_address
 
 # from volttron.client.agent import utils
 # from volttron.client.agent.utils import load_platform_config, get_platform_instance_name
@@ -522,7 +522,7 @@ class Core(BasicCore):
         self.ondisconnected = Signal()
         self.configuration = Signal()
         super(Core, self).__init__(owner)
-        self.address = address if address is not None else cc.get_address()
+        self.address = address if address is not None else get_address()
         self.identity = str(identity) if identity is not None else str(uuid.uuid4())
         self.agent_uuid = agent_uuid
         self.publickey = publickey
