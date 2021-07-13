@@ -95,6 +95,3 @@ def build_connection(
         **kwargs
     )
     return cn
-
-
-

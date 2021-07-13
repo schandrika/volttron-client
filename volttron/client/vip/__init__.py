@@ -51,8 +51,8 @@ from threading import local as _local
 
 import zmq as _zmq
 
-from .socket import *
-from .socket import _Socket
+from volttron.utils.socket import *
+from volttron.utils.socket import _Socket
 
 
 class Socket(_Socket, _zmq.Socket):

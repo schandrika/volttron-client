@@ -89,7 +89,6 @@ class Agent(object):
                 self.web = WebSubSystem(owner, core, self.rpc)
             self.auth = Auth(owner, core, self.rpc)
 
-
     def __init__(
         self,
         identity=None,
@@ -161,7 +160,7 @@ class Agent(object):
                     volttron_home=volttron_home,
                     agent_uuid=agent_uuid,
                     reconnect_interval=reconnect_interval,
-                    version=version
+                    version=version,
                 )
             self.vip = Agent.Subsystems(
                 self,
@@ -224,7 +223,7 @@ def build_agent(
         publickey, secretkey = get_server_keys()
 
     message_bus = cc.get_messagebus()
-    
+
     try:
         enable_store = kwargs.pop("enable_store")
     except KeyError:

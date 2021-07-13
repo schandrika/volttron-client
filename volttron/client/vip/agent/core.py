@@ -76,7 +76,7 @@ from .. import router
 
 # TODO add back rabbitmq
 # from ..rmq_connection import RMQConnection
-from ...vip.socket import Message
+from volttron.utils.socket import Message
 from ...vip.zmq_connection import ZMQConnection
 import volttron.client as client
 
@@ -84,6 +84,7 @@ __all__ = ["BasicCore", "Core", "ZMQCore", "killing"]
 
 if cc.is_rabbitmq_available():
     import pika
+
     __all__.append("RMQCore")
 
 
@@ -744,12 +745,18 @@ class ZMQCore(Core):
             self.serverkey = self._get_keys_from_addr()[2]
 
         known_serverkey = self._get_serverkey_from_known_hosts()
-        
-        if (self.serverkey is not None and known_serverkey is not None
-                and self.serverkey != known_serverkey):
-            raise Exception("Provided server key ({}) for {} does "
-                            "not match known serverkey ({}).".format(
-                self.serverkey, self.address, known_serverkey))
+
+        if (
+            self.serverkey is not None
+            and known_serverkey is not None
+            and self.serverkey != known_serverkey
+        ):
+            raise Exception(
+                "Provided server key ({}) for {} does "
+                "not match known serverkey ({}).".format(
+                    self.serverkey, self.address, known_serverkey
+                )
+            )
 
         # Until we have containers for agents we should not require all
         # platforms that connect to be in the known host file.
@@ -944,6 +951,7 @@ def killing(greenlet, *args, **kwargs):
 
 
 if cc.is_rabbitmq_available():
+
     class RMQCore(Core):
         """
         Concrete Core class for RabbitMQ message bus

@@ -43,7 +43,7 @@ from typing import Union
 from urllib.parse import urlparse
 import weakref
 
-from . base import SubsystemBase
+from .base import SubsystemBase
 
 from volttron.client.known_identities import AUTH
 from volttron.utils import ClientContext as cc, jsonapi
@@ -227,11 +227,13 @@ class Auth(SubsystemBase):
                                 fqid_local, info.instance_name
                             )
                             _log.debug("REMOTE RMQ USER IS: {}".format(remote_rmq_user))
-                            remote_rmq_address = self._core().rmq_mgmt.build_remote_connection_param(
-                                remote_rmq_user,
-                                info.rmq_address,
-                                ssl_auth=True,
-                                cert_dir=self.get_remote_certs_dir(),
+                            remote_rmq_address = (
+                                self._core().rmq_mgmt.build_remote_connection_param(
+                                    remote_rmq_user,
+                                    info.rmq_address,
+                                    ssl_auth=True,
+                                    cert_dir=self.get_remote_certs_dir(),
+                                )
                             )
 
                             value = build_agent(

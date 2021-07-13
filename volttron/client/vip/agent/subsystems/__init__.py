@@ -60,5 +60,5 @@ __all__ = [
     "Heartbeat",
     "Health",
     "ConfigStore",
-    "Auth"
+    "Auth",
 ]
