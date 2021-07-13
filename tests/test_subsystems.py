@@ -15,12 +15,11 @@ def test_subsystems_available():
     assert agent.vip.ping
     assert agent.vip.pubsub
     assert agent.vip.rpc
-    
+
     # TODO: Add tests for enable/disable options.
 
-    # agent = Agent(enable_store=False)    
-    
-    
+    # agent = Agent(enable_store=False)
+
     # with pytest.raises(AttributeError):
     #     agent.vip.channel
     # with pytest.raises(NameError):
@@ -37,4 +36,3 @@ def test_subsystems_available():
     # assert agent.vip.ping
     # assert agent.vip.pubsub
     # assert agent.vip.rpc
-    
