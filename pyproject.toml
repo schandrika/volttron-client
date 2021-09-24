@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "volttron-client"
-version = "0.2.0"
+version = "0.3.0"
 description = "Client for connecting to a volttron server"
 authors = ["C. Allwardt <craig.allwardt@pnnl.gov>"]
 license = "Apache 2.0"
@@ -26,8 +26,8 @@ pytz = ">=2019,<2022"
 tzlocal = ">=2,<3"
 dateutils = ">=0.6,<0.7"
 grequests = "^0.6.0"
-volttron-utils = "^0.2.1"
-#volttron-utils = { path="../volttron-utils", develop=true}
+#volttron-utils = "^0.2.1"
+volttron-utils = { path="../volttron-utils", develop=true}
 psutil = "^5.8.0"
 toml = "^0.10.2"
 
@@ -42,6 +42,10 @@ black = "^21.6b0"
 pylint = "^2.9.3"
 mypy = "^0.910"
 toml = "^0.10.2"
+
+[tool.poetry.scripts]
+vctl = "volttron.commands.control:main"
+volttron-ctl = "volttron.commands.control:main"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
