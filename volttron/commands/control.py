@@ -51,14 +51,13 @@ import sys
 import tarfile
 import tempfile
 import traceback
-from typing import Optional
+from typing import Optional, List
 import uuid
 from datetime import timedelta, datetime
 
 import gevent
 import gevent.event
-# noinspection PyUnresolvedReferences
-import grequests
+
 import requests
 from requests.exceptions import ConnectionError
 
@@ -94,7 +93,7 @@ from volttron.utils import argparser as config
 from volttron.utils.commands import is_volttron_running, wait_for_volttron_shutdown
 from volttron.utils.jsonrpc import MethodNotFound, RemoteError
 from volttron.utils.keystore import KeyStore, KnownHostsStore
-from volttron.utils.logging import log_to_file
+from volttron.utils import log_to_file
 
 
 from volttron.client.known_identities import (
@@ -123,22 +122,25 @@ rmq_mgmt = None
 
 CHUNK_SIZE = 4096
 
-# Note this is not the same agent that is in volttron.client.vip.agent.Agent
-Agent = collections.namedtuple('Agent', 'name tag uuid vip_identity agent_user')
+AgentTuple = collections.namedtuple('Agent', 'name tag uuid vip_identity agent_user')
 
 def expandall(string):
     return _os.path.expanduser(_os.path.expandvars(string))
 
-def _list_agents(opts):
-    print(opts.connection.call("list_agents"))
-    return []
-    # if cc.is_local():
-    #     opts.aip.agent_tag(uuid)
-    #     connection = opts.connection
-    # agents = connection.call("list_agents")
-    # print(agents)
-    # return [Agent(name, aip.agent_tag(uuid), uuid, aip.agent_identity(uuid), '')
-    #         for uuid, name in aip.list_agents().items()]
+
+def _list_agents(opts) -> List[AgentTuple]:
+    """
+    Connected to the server and calls the list_agents method.
+
+    Returns:
+        List of AgentTuple
+    """
+    agents = opts.connection.call("list_agents")
+    return [AgentTuple(a['name'],
+                       a.get('tag', ''),
+                       a['uuid'],
+                       a['identity'],
+                       a.get('agent_user')) for a in agents]
 
 
 def escape(pattern):
@@ -718,7 +720,7 @@ def disable_agent(opts):
 
 def start_agent(opts):
     call = opts.connection.call
-    agents = _list_agents(opts.aip)
+    agents = _list_agents(opts)
     for pattern, match in filter_agents(agents, opts.pattern, opts):
         if not match:
             _stderr.write(
@@ -734,7 +736,7 @@ def start_agent(opts):
 
 def stop_agent(opts):
     call = opts.connection.call
-    agents = _list_agents(opts.aip)
+    agents = _list_agents(opts)
     for pattern, match in filter_agents(agents, opts.pattern, opts):
         if not match:
             _stderr.write(
