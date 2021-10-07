@@ -43,9 +43,13 @@ import os
 
 import gevent
 
-from volttron import platform
-from volttron.client import get_home
-from volttron.client.agent.utils import get_aware_utc_now
+from volttron.utils import (
+    ClientContext as cc,
+    get_aware_utc_now
+)
+
+#from volttron.client import get_home
+#from volttron.client.agent.utils import get_aware_utc_now
 from volttron.client.vip.agent import Agent
 from volttron.client import build_vip_address_string
 
@@ -86,7 +90,7 @@ class Connection(object):
         self.volttron_home = volttron_home
 
         if self.volttron_home is None:
-            self.volttron_home = os.path.abspath(platform.get_home())
+            self.volttron_home = os.path.abspath(cc.get_volttron_home())
 
         if address.startswith("ipc"):
             full_address = address
