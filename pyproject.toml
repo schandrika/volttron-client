@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "volttron-client"
-version = "0.3.1"
+version = "0.3.2"
 description = "Client for connecting to a volttron server"
 authors = ["C. Allwardt <craig.allwardt@pnnl.gov>"]
 license = "Apache 2.0"
@@ -19,12 +19,13 @@ python = ">=3.6.2,<4"
 importlib-metadata = {version = "^1.0", python = "<3.8"}
 idna = "<3,>=2.5"
 dateutils = ">=0.6,<0.7"
-volttron-utils = "^0.2.3"
+volttron-utils = "^0.3"
 # Use the following if developing simultanously with volttron-utils
 #volttron-utils = {path="../volttron-utils", develop=true}
 
 toml = "^0.10.2"
 grequests = "^0.6.0"
+requests = "^2.26.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"

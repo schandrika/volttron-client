@@ -42,7 +42,7 @@ import os
 
 import gevent
 
-from volttron.client import get_address
+from volttron.utils import get_address
 from volttron.utils.keystore import KeyStore, KnownHostsStore
 from volttron.client.vip.agent import Agent
 from volttron.client.vip.agent.connection import Connection
