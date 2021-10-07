@@ -48,6 +48,7 @@ from .health import Health
 from .configstore import ConfigStore
 from .auth import Auth
 from .rmq_pubsub import RMQPubSub
+from .web import WebSubSystem
 
 __all__ = [
     "PeerList",
@@ -61,4 +62,5 @@ __all__ = [
     "Health",
     "ConfigStore",
     "Auth",
+    "WebSubSystem"
 ]
