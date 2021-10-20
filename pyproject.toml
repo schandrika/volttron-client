@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "volttron-client"
-version = "0.3.4"
+version = "0.4.0"
 description = "Client for connecting to a volttron server"
 authors = ["C. Allwardt <craig.allwardt@pnnl.gov>"]
 license = "Apache 2.0"
