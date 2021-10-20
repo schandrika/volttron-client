@@ -204,49 +204,6 @@ def find_agent_data_dir(opts, agent_uuid):
     return agent_data_dir
 
 
-def upgrade_agent(opts):
-    publickey = None
-    secretkey = None
-
-    identity = opts.vip_identity
-    if not identity:
-        raise ValueError("Missing required VIP IDENTITY option")
-
-    identity_to_uuid = opts.aip.get_agent_identity_to_uuid_mapping()
-    agent_uuid = identity_to_uuid.get(identity, None)
-    backup_agent_file = "/tmp/{}.tar.gz".format(agent_uuid)
-    if agent_uuid:
-        agent_data_dir = find_agent_data_dir(opts, agent_uuid)
-
-        if agent_data_dir:
-            backup_agent_data(backup_agent_file, agent_data_dir)
-
-        keystore = opts.aip.get_agent_keystore(agent_uuid)
-        publickey = keystore.public
-        secretkey = keystore.secret
-        _stdout.write('Removing previous version of agent "{}"\n'
-                      .format(identity))
-        opts.connection.call('remove_agent', agent_uuid, remove_auth=False)
-    else:
-        _stdout.write(('Could not find agent with VIP IDENTITY "{}". '
-                       'Installing as new agent\n').format(identity))
-
-    if secretkey is None or publickey is None:
-        publickey = None
-        secretkey = None
-
-    def restore_agents_data(agent_uuid):
-        # if we are  upgrading transfer the old data on.
-        if os.path.exists(backup_agent_file):
-            new_agent_data_dir = find_agent_data_dir(opts, agent_uuid)
-            restore_agent_data_from_tgz(backup_agent_file, new_agent_data_dir)
-            os.remove(backup_agent_file)
-
-    raise ValueError("Add install_agent here!")
-    # install_agent(opts, publickey=publickey, secretkey=secretkey,
-    #               callback=restore_agents_data)
-
-
 def tag_agent(opts):
     agents = filter_agent(_list_agents(opts.aip), opts.agent, opts)
     if len(agents) != 1:
@@ -2143,16 +2100,6 @@ def main():
     run = add_parser('run',
                      help='start any agent by path')
     run.add_argument('directory', nargs='+', help='path to agent directory')
-
-    upgrade = add_parser('upgrade', help='upgrade agent from wheel',
-                         epilog='Optionally you may specify the --tag argument to tag the '
-                                'agent during upgrade without requiring a separate call to '
-                                'the tag command. ')
-    upgrade.add_argument('vip_identity', metavar='vip-identity',
-                         help='VIP IDENTITY of agent to upgrade')
-    upgrade.add_argument('wheel', help='path to new agent wheel')
-    upgrade.add_argument('--tag', help='tag for the upgraded agent')
-    upgrade.set_defaults(func=upgrade_agent, verify_agents=True)
 
     # ====================================================
     # rpc commands
