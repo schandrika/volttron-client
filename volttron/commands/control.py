@@ -82,7 +82,7 @@ from requests.exceptions import ConnectionError
 # from volttron.utils.rmq_mgmt import RabbitMQMgmt
 # from volttron.utils.rmq_setup import check_rabbit_status
 # from volttron.platform.agent.utils import is_secure_mode, wait_for_volttron_shutdown
-# from volttron.platform.install_agents import add_install_agent_parser
+from volttron.commands.install_agents import add_install_agent_parser, InstallRuntimeError
 
 from volttron.utils import (
     ClientContext as cc,
@@ -123,6 +123,7 @@ rmq_mgmt = None
 CHUNK_SIZE = 4096
 
 AgentTuple = collections.namedtuple('Agent', 'name tag uuid vip_identity agent_user')
+
 
 def expandall(string):
     return _os.path.expanduser(_os.path.expandvars(string))
@@ -740,38 +741,39 @@ def shutdown_agents(opts):
         wait_for_volttron_shutdown(cc.get_volttron_home(), 60)
 
 
-def _send_agent(connection, peer, path):
-    wheel = open(path, 'rb')
-    channel = connection.vip.channel(peer)
+# def _send_agent(connection, peer, path):
+#     wheel = open(path, "rb")
+#     channel = connection.vip.channel(peer)
+#
+#     def send():
+#         try:
+#             # Wait for peer to open compliment channel
+#             channel.recv()
+#             while True:
+#                 data = wheel.read(8192)
+#                 channel.send(data)
+#                 if not data:
+#                     break
+#             # Wait for peer to signal all data received
+#             channel.recv()
+#         finally:
+#             wheel.close()
+#             channel.close(linger=0)
+#
+#     result = connection.vip.rpc.call(
+#         peer, "install_agent", os.path.basename(path), channel.name
+#     )
+#     task = gevent.spawn(send)
+#     result.rawlink(lambda glt: task.kill(block=False))
+#     _log.debug(f"Result is {result}")
+#     return result
 
-    def send():
-        try:
-            # Wait for peer to open compliment channel
-            channel.recv()
-            while True:
-                data = wheel.read(8192)
-                channel.send(data)
-                if not data:
-                    break
-            # Wait for peer to signal all data received
-            channel.recv()
-        finally:
-            wheel.close()
-            channel.close(linger=0)
 
-    result = connection.vip.rpc.call(
-        peer, 'install_agent', os.path.basename(path), channel.name)
-    task = gevent.spawn(send)
-    result.rawlink(lambda glt: task.kill(block=False))
-    _log.debug(f"Result is {result}")
-    return result
-
-
-def send_agent(opts):
-    connection = opts.connection
-    for wheel in opts.wheel:
-        uuid = _send_agent(connection.server, connection.peer, wheel).get()
-        return uuid
+# def send_agent(opts):
+#     connection = opts.connection
+#     for wheel in opts.wheel:
+#         uuid = _send_agent(connection.server, connection.peer, wheel).get()
+#         return uuid
 
 
 def gen_keypair(opts):
@@ -2023,7 +2025,7 @@ def main():
         return subparser.add_parser(*args, **kwargs)
 
     # TODO: Add install back
-    # add_install_agent_parser(add_parser, HAVE_RESTRICTED)
+    add_install_agent_parser(add_parser)
 
     tag = add_parser('tag', parents=[filterable],
                      help='set, show, or remove agent tag')
@@ -2416,11 +2418,6 @@ def main():
     shutdown.add_argument('--platform', action='store_true',
                           help='also stop the platform process')
     shutdown.set_defaults(func=shutdown_agents, platform=False)
-
-    send = add_parser('send',
-                      help='send agent and start on a remote platform')
-    send.add_argument('wheel', nargs='+', help='agent package to send')
-    send.set_defaults(func=send_agent)
 
     stats = add_parser('stats',
                        help='manage router message statistics tracking')
