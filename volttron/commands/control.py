@@ -199,9 +199,14 @@ def restore_agent_data_from_tgz(source_file, output_dir):
         tar.extractall(output_dir)
 
 
-def find_agent_data_dir(opts, agent_uuid):
+def get_agent_data_dir_by_uuid(opts, agent_uuid):
     # Find agent-data directory path, create if missing
-    agent_data_dir = opts.aip.create_agent_data_dir_if_missing(agent_uuid)
+    agent_data_dir = opts.aip.get_agent_data_dir(agent_uuid=agent_uuid)
+    return agent_data_dir
+
+
+def get_agent_data_dir_by_vip_id(opts, vip_identity):
+    agent_data_dir = opts.aip.get_agent_data_dir(vip_identity=vip_identity)
     return agent_data_dir
 
 
