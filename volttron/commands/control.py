@@ -122,14 +122,14 @@ rmq_mgmt = None
 
 CHUNK_SIZE = 4096
 
-AgentTuple = collections.namedtuple('Agent', 'name tag uuid vip_identity agent_user')
+AgentMeta = collections.namedtuple('Agent', 'name tag uuid vip_identity agent_user')
 
 
 def expandall(string):
     return _os.path.expanduser(_os.path.expandvars(string))
 
 
-def _list_agents(opts) -> List[AgentTuple]:
+def _list_agents(opts) -> List[AgentMeta]:
     """
     Connected to the server and calls the list_agents method.
 
@@ -137,11 +137,11 @@ def _list_agents(opts) -> List[AgentTuple]:
         List of AgentTuple
     """
     agents = opts.connection.call("list_agents")
-    return [AgentTuple(a['name'],
-                       a.get('tag', ''),
-                       a['uuid'],
-                       a['identity'],
-                       a.get('agent_user')) for a in agents]
+    return [AgentMeta(a['name'],
+                      a.get('tag', ''),
+                      a['uuid'],
+                      a['identity'],
+                      a.get('agent_user')) for a in agents]
 
 
 def escape(pattern):
@@ -199,14 +199,19 @@ def restore_agent_data_from_tgz(source_file, output_dir):
         tar.extractall(output_dir)
 
 
-def find_agent_data_dir(opts, agent_uuid):
+def get_agent_data_dir_by_uuid(opts, agent_uuid):
     # Find agent-data directory path, create if missing
-    agent_data_dir = opts.aip.create_agent_data_dir_if_missing(agent_uuid)
+    agent_data_dir = opts.aip.get_agent_data_dir(agent_uuid=agent_uuid)
+    return agent_data_dir
+
+
+def get_agent_data_dir_by_vip_id(opts, vip_identity):
+    agent_data_dir = opts.aip.get_agent_data_dir(vip_identity=vip_identity)
     return agent_data_dir
 
 
 def tag_agent(opts):
-    agents = filter_agent(_list_agents(opts.aip), opts.agent, opts)
+    agents = filter_agent(_list_agents(opts), opts.agent, opts)
     if len(agents) != 1:
         if agents:
             msg = 'multiple agents selected'
@@ -230,7 +235,7 @@ def tag_agent(opts):
 
 
 def remove_agent(opts, remove_auth=True):
-    agents = _list_agents(opts.aip)
+    agents = _list_agents(opts)
     for pattern, match in filter_agents(agents, opts.pattern, opts):
         if not match:
             _stderr.write(
@@ -2024,7 +2029,6 @@ def main():
         subparser = kwargs.pop("subparser", top_level_subparsers)
         return subparser.add_parser(*args, **kwargs)
 
-    # TODO: Add install back
     add_install_agent_parser(add_parser)
 
     tag = add_parser('tag', parents=[filterable],

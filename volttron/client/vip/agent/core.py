@@ -190,16 +190,21 @@ class BasicCore(object):
         self.oninterrupt = None
         self.tie_breaker = 0
 
+        # TODO: HAndle sig int for child process
+        # latest gevent does not have gevent.signal_handler()
+        # TODO - update based on latest gevent function location
         # SIGINT does not work in Windows.
         # If using the standalone agent on a windows machine,
         # this section will be skipped
-        if python_platform.system() != "Windows":
-            prev_int_signal = gevent.signal.getsignal(signal.SIGINT)
-            # To avoid a child agent handler overwriting the parent agent handler
-            if prev_int_signal in [None, signal.SIG_IGN, signal.SIG_DFL]:
-                self.oninterrupt = gevent.signal.signal(
-                    signal.SIGINT, self._on_sigint_handler
-                )
+        # if python_platform.system() != "Windows":
+        #     gevent.signal_handler(signal.SIG_IGN, self._on_sigint_handler)
+        #     gevent.signal_handler(signal.SIG_DFL, self._on_sigint_handler)
+            # prev_int_signal = gevent.signal_handler(signal.SIGINT)
+            # # To avoid a child agent handler overwriting the parent agent handler
+            # if prev_int_signal in [None, signal.SIG_IGN, signal.SIG_DFL]:
+            #     self.oninterrupt = gevent.signal_handler(
+            #         signal.SIGINT, self._on_sigint_handler
+            #     )
         self._owner = owner
 
     def setup(self):
@@ -571,14 +576,10 @@ class Core(BasicCore):
     def _get_keys_from_keystore(self):
         """Returns agent's public and secret key from keystore"""
         if self.agent_uuid:
-            # this is an installed agent, put keystore in its dist-info
-            current_directory = os.path.abspath(os.curdir)
-            keystore_dir = os.path.join(
-                current_directory,
-                "{}.dist-info".format(os.path.basename(current_directory)),
-            )
-        elif self.identity is None:
-            raise ValueError("Agent's VIP identity is not set")
+            # this is an installed agent, put keystore in its agent's directory
+            if self.identity is None:
+                raise ValueError("Agent's VIP identity is not set")
+            keystore_dir = os.path.join(self.volttron_home, "agents", self.identity)
         else:
             if not self.volttron_home:
                 raise ValueError("VOLTTRON_HOME must be specified.")
@@ -736,14 +737,19 @@ class ZMQCore(Core):
 
     def _set_public_and_secret_keys(self):
         if self.publickey is None or self.secretkey is None:
+            self.publickey = os.environ.get("AGENT_PUBLIC_KEY")
+            self.secretkey = os.environ.get("AGENT_SECRET_KEY")
+            _log.debug(f" after setting agent provate and public key {self.publickey} {self.secretkey}")
+        if self.publickey is None or self.secretkey is None:
             self.publickey, self.secretkey, _ = self._get_keys_from_addr()
         if self.publickey is None or self.secretkey is None:
             self.publickey, self.secretkey = self._get_keys_from_keystore()
 
     def _set_server_key(self):
         if self.serverkey is None:
-            self.serverkey = self._get_keys_from_addr()[2]
-
+            _log.debug(f" environ keys: {dict(os.environ).keys()}")
+            _log.debug(f"server key from env {os.environ.get('VOLTTRON_SERVER_KEY')}")
+            self.serverkey = os.environ.get("VOLTTRON_SERVER_KEY")
         known_serverkey = self._get_serverkey_from_known_hosts()
 
         if (

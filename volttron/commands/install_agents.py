@@ -38,9 +38,11 @@
 
 import argparse
 import base64
+import glob
 import hashlib
 import logging
 import os
+import shutil
 from pathlib import Path
 import sys
 import tempfile
@@ -95,67 +97,68 @@ def install_agent_directory(opts, publickey=None, secretkey=None):
     :param agent_config:
     :return:
     """
-    raise NotImplemented("Need to update this to use pip for the directory build or whatever")
-    # if not os.path.isfile(os.path.join(opts.install_path, "setup.py")):
-    #     _log.error("Agent source must contain a setup.py file.")
-    #     sys.exit(-10)
-    #
+    if os.path.isfile(os.path.join(opts.install_path, "setup.py")):
+        if os.path.isfile(os.path.join(opts.install_path, "Pipfile")):
+            cmd = ["pipenv", "run", "python3", "setup.py", "bdist_wheel"]
+        else:
+            cmd = ["python3", "setup.py", "bdist_wheel"]
+    elif os.path.isfile(os.path.join(opts.install_path, "poetry.lock")):
+        cmd = ["poetry", "build"]
+    else:
+        raise InstallRuntimeError(f"Unable to build file. No setup.py or poetry.lock file exists in {opts.install_path}")
+    output = execute_command(cmd, cwd=opts.install_path)
+    # wheel should be in dist dir
+    dist_path = os.path.abspath(os.path.join(opts.install_path, "dist"))
+    match = glob.glob(os.path.join(dist_path, "*.whl"))
+    if match:
+        opts.package = match[0]
+    else:
+        raise InstallRuntimeError(f"No .whl file found in {dist_path} after running command {' '.join(cmd)}. "
+                                  f"\nCommand returned stdout:\n{output}")
+
+    # TODO: does pipenv handle this. Does whl contain requirements.txt
     # assert opts.connection, "Connection must have been created to access this feature."
     #
     # if not opts.skip_requirements:
     #     install_requirements(opts.install_path)
     #
-    # wheelhouse = os.path.join(cc.get_volttron_home(), "packaged")
-    # opts.package = create_package(opts.install_path, wheelhouse, opts.vip_identity)
-    #
-    # if not os.path.isfile(opts.package):
-    #     raise InstallRuntimeError("The wheel file for the agent was unable to be created.")
-    #
-    # agent_uuid = None
-    # if not opts.vip_identity:
-    #     agent_default_id_file = Path(opts.install_path).joinpath("IDENTITY")
-    #     if agent_default_id_file.is_file():
-    #         with open(str(agent_default_id_file)) as fin:
-    #             opts.vip_identity = fin.read().strip()
-    # agent_uuid = None
-    #
-    # # Verify and load agent_config up from the opts.  agent_config will
-    # # be a yaml config file.
-    # agent_config = opts.agent_config
-    #
-    # if agent_config is None:
-    #     agent_config = {}
-    #
-    # # if not a dict then config should be a filename
-    # if not isinstance(agent_config, dict):
-    #     config_file = agent_config
-    #     if not Path(config_file).exists():
-    #         raise InstallRuntimeError(f"Config file {config_file} does not exist!")
-    # else:
-    #     cfg = tempfile.NamedTemporaryFile()
-    #     with open(cfg.name, 'w') as fout:
-    #         fout.write(yaml.safe_dump(agent_config))
-    #     config_file = cfg.name
-    #
-    # try:
-    #     with open(config_file) as fp:
-    #         data = yaml.safe_load(fp)
-    # except Exception as exc:
-    #     raise InstallRuntimeError(exc)
-    #
-    # try:
-    #     # Configure the whl file before installing.
-    #     add_files_to_package(opts.package, {'config_file': config_file})
-    # except FileNotFoundError:
-    #     raise InstallRuntimeError(f"File not found: {config_file}")
-    #
-    # _send_and_intialize_agent(opts, publickey, secretkey)
+
+    if not opts.vip_identity:
+        agent_default_id_file = Path(opts.install_path).joinpath("IDENTITY")
+        if agent_default_id_file.is_file():
+            with open(str(agent_default_id_file)) as fin:
+                opts.vip_identity = fin.read().strip()
+
+    _send_and_intialize_agent(opts, publickey, secretkey)
     
 
 def _send_and_intialize_agent(opts, publickey, secretkey):
-    
+
+    # Verify and load agent_config up from the opts.  agent_config will
+    # be a yaml config file.
+    agent_config = opts.agent_config
+    if agent_config is None:
+        agent_config = {}
+
+    # if not a dict then config should be a filename
+    if not isinstance(agent_config, dict):
+        config_file = agent_config
+        if not Path(config_file).exists():
+            raise InstallRuntimeError(f"Config file {config_file} does not exist!")
+    else:
+        cfg = tempfile.NamedTemporaryFile()
+        with open(cfg.name, 'w') as fout:
+            fout.write(yaml.safe_dump(agent_config))
+        config_file = cfg.name
+
+    try:
+        with open(config_file) as fp:
+            config_dict = yaml.safe_load(fp)
+    except Exception as exc:
+        raise InstallRuntimeError(exc)
+
     agent_uuid = send_agent(opts.connection, opts.package, opts.vip_identity,
-                            publickey, secretkey, opts.force)
+                            publickey, secretkey, opts.force, config_dict)
 
     if not agent_uuid:
         raise ValueError(f"Agent was not installed properly.")
@@ -231,14 +234,15 @@ def install_agent_vctl(opts, publickey=None, secretkey=None, callback=None):
     except AttributeError:
         install_path = opts.wheel
 
-    if opts.vip_identity:
-        # First check to see if we have an identity already if it does and force is specified
-        # then we can send things across and it will be handled on the server side.
-        if opts.connection.call("identity_exists", opts.vip_identity):
-            if not opts.force:
-                opts.connection.kill()
-                raise InstallRuntimeError("Identity already exists.  Pass --force option to re-install.")
-
+    # TODO move to server
+    # if opts.vip_identity:
+    #     # First check to see if we have an identity already if it does and force is specified
+    #     # then we can send things across and it will be handled on the server side.
+    #     if opts.connection.call("identity_exists", opts.vip_identity):
+    #         if not opts.force:
+    #             opts.connection.kill()
+    #             raise InstallRuntimeError("Identity already exists.  Pass --force option to re-install.")
+    pip_download_dir = None
     if os.path.isdir(install_path):
         install_agent_directory(opts, publickey, secretkey)
         if opts.connection is not None:
@@ -246,13 +250,28 @@ def install_agent_vctl(opts, publickey=None, secretkey=None, callback=None):
     else:
         opts.package = opts.install_path
         if not os.path.exists(opts.package):
-            opts.connection.kill()
-            raise FileNotFoundError(f"Invalid file {opts.package}")
+            if os.path.dirname(opts.package) == "":
+                # no path prefix only a name and name is not a local file.
+                # check if you can download from pip
+                pip_download_dir = tempfile.mkdtemp()
+                try:
+                    execute_command(["pip", "download", "--no-deps", "--dest", pip_download_dir, opts.package])
+                    # there should be a single wheel file in dir
+                    opts.package = os.path.join(pip_download_dir, os.listdir(pip_download_dir)[0])
+                except RuntimeError as r:
+                    raise InstallRuntimeError(f" Invalid wheel {opts.package}. It is not a local wheel file. Error"
+                                              f"downloading {opts.package} from pip")
+
+            else:
+                opts.connection.kill()
+                raise FileNotFoundError(f"Invalid file {opts.package}")
         _send_and_intialize_agent(opts, publickey, secretkey)
+        if pip_download_dir:
+            shutil.rmtree(pip_download_dir)
 
 
-def send_agent(connection: "ControlConnection", wheel_file: str, vip_identity: str , publickey: str, 
-    secretkey: str, force: str):
+def send_agent(connection: "ControlConnection", wheel_file: str, vip_identity: str, publickey: str,
+    secretkey: str, force: bool, agent_config: dict):
     """
     Send an agent wheel from the client to the server.
 
@@ -418,13 +437,16 @@ def send_agent(connection: "ControlConnection", wheel_file: str, vip_identity: s
     if server.core.messagebus == 'rmq':
         _log.debug(f"calling install_agent on {peer} sending to topic {rmq_send_topic}")
         task = gevent.spawn(send_rmq)
+        # TODO: send config
         result = server.vip.rpc.call(
-                peer, 'install_agent_rmq', vip_identity, os.path.basename(path), rmq_send_topic, force, rmq_response_topic)
+            peer, 'install_agent_rmq', os.path.basename(path), rmq_send_topic, vip_identity, publickey, secretkey,
+            force, agent_config, rmq_response_topic)
     elif server.core.messagebus == 'zmq':
         _log.debug(f"calling install_agent on {peer} using channel {channel.name}")
         task = gevent.spawn(send_zmq)
         result = server.vip.rpc.call(
-                peer, 'install_agent', os.path.basename(path), channel.name, vip_identity, publickey, secretkey, force)
+                peer, 'install_agent', os.path.basename(path), channel.name, vip_identity, publickey, secretkey, force,
+                agent_config)
         
     else:
         raise ValueError("Unknown messagebus detected!")
