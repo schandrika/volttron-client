@@ -627,7 +627,7 @@ def status_agents(opts):
 
 
 def agent_health(opts):
-    agents = {agent.uuid: agent for agent in _list_agents(opts.aip)}.values()
+    agents = {agent.uuid: agent for agent in _list_agents(opts)}.values()
     agents = get_filtered_agents(opts, agents)
     if not agents:
         if not opts.json:
