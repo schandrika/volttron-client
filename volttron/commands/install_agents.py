@@ -42,6 +42,7 @@ import glob
 import hashlib
 import logging
 import os
+import shutil
 from pathlib import Path
 import sys
 import tempfile
@@ -241,7 +242,7 @@ def install_agent_vctl(opts, publickey=None, secretkey=None, callback=None):
     #         if not opts.force:
     #             opts.connection.kill()
     #             raise InstallRuntimeError("Identity already exists.  Pass --force option to re-install.")
-
+    pip_download_dir = None
     if os.path.isdir(install_path):
         install_agent_directory(opts, publickey, secretkey)
         if opts.connection is not None:
@@ -249,9 +250,24 @@ def install_agent_vctl(opts, publickey=None, secretkey=None, callback=None):
     else:
         opts.package = opts.install_path
         if not os.path.exists(opts.package):
-            opts.connection.kill()
-            raise FileNotFoundError(f"Invalid file {opts.package}")
+            if os.path.dirname(opts.package) == "":
+                # no path prefix only a name and name is not a local file.
+                # check if you can download from pip
+                pip_download_dir = tempfile.mkdtemp()
+                try:
+                    execute_command(["pip", "download", "--no-deps", "--dest", pip_download_dir, opts.package])
+                    # there should be a single wheel file in dir
+                    opts.package = os.path.join(pip_download_dir, os.listdir(pip_download_dir)[0])
+                except RuntimeError as r:
+                    raise InstallRuntimeError(f" Invalid wheel {opts.package}. It is not a local wheel file. Error"
+                                              f"downloading {opts.package} from pip")
+
+            else:
+                opts.connection.kill()
+                raise FileNotFoundError(f"Invalid file {opts.package}")
         _send_and_intialize_agent(opts, publickey, secretkey)
+        if pip_download_dir:
+            shutil.rmtree(pip_download_dir)
 
 
 def send_agent(connection: "ControlConnection", wheel_file: str, vip_identity: str, publickey: str,
