@@ -223,12 +223,12 @@ def tag_agent(opts):
     agent, = agents
     if opts.tag:
         _stdout.write('Tagging {} {}\n'.format(agent.uuid, agent.name))
-        opts.aip.tag_agent(agent.uuid, opts.tag)
+        opts.connection.call('tag_agent', agent.uuid, opts.tag)
     elif opts.remove:
         if agent.tag is not None:
             _stdout.write(
                 'Removing tag for {} {}\n'.format(agent.uuid, agent.name))
-            opts.aip.tag_agent(agent.uuid, None)
+            opts.connection.call('tag_agent', agent.uuid, None)
     else:
         if agent.tag is not None:
             _stdout.writelines([agent.tag, '\n'])
