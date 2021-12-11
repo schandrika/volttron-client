@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "9fad3d4b27d4ec4bb99cf8c2fb878de92f9438b049564d081be95ca071d1ccbe"
+            "sha256": "1cd4ea2ac8f2fc8ae21f78acfab2a5639d96aedb1fd098ae1710770f386a7e19"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -195,7 +195,6 @@
                 "sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3'",
             "version": "==3.3"
         },
         "pbr": {
@@ -461,7 +460,6 @@
                 "sha256:2666401939cdaa5f4e0c08cf7f20c9b21423b95e88f4675b1443973bdb080c42",
                 "sha256:5e76517f5b9b119acf37ca8819781db6c16ea433f7e2062c4afc2b6fbedb1330"
             ],
-            "index": "pypi",
             "version": "==4.5.0"
         },
         "zope.interface": {
@@ -518,7 +516,6 @@
                 "sha256:f44e517131a98f7a76696a7b21b164bcb85291cee106a23beccce454e1f433a4",
                 "sha256:f7ee479e96f7ee350db1cf24afa5685a5899e2b34992fb99e1f7c1b0b758d263"
             ],
-            "index": "pypi",
             "version": "==5.4.0"
         }
     },
@@ -738,7 +735,6 @@
                 "sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3'",
             "version": "==3.3"
         },
         "importlib-metadata": {
@@ -760,7 +756,6 @@
                 "sha256:1b5a0ea5c0e7b166b2f5895b91a08c14de8915afda4407fb5022a195224958ac",
                 "sha256:fa9e232dfa0c498bd0b8a3a73b8d8a31978304dcef0515adc859d4e096f96f4f"
             ],
-            "markers": "sys_platform == 'linux'",
             "version": "==0.7.1"
         },
         "keyring": {

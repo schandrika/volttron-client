@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Added setup.cfg description
 * Added documentation to the initial readme
 * Update requirements.txt
 
