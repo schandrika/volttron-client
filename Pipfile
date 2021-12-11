@@ -39,4 +39,4 @@ watchdog = "==2.1.6"
 zmq = "==0.0.0"
 "zope.event" = "==4.5.0"
 "zope.interface" = "==5.4.0"
-
+volttron-utils = "==0.3.3"
