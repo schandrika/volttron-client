@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+* Added documentation to the initial readme
+* Update requirements.txt
+
+v0.3.5
+------
+
+* Added generated files to the repository
 * Standardize setup.cfg to start at python 3.8
 * Standardize github actions across core repositories
 * minor fix to get vctl health working
