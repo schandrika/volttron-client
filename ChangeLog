@@ -1,0 +1,59 @@
+CHANGES
+=======
+
+* Standardize setup.cfg to start at python 3.8
+* Standardize github actions across core repositories
+* minor fix to get vctl health working
+* fixed vctl tag command
+* changed to get agent wheel from pip issue #6 (https://github.com/VOLTTRON/volttron-server/issues/6)
+* vctl fixes for - install agent from wheel, dir. - start agent - stop agent - remove agent
+* More changes vctl install - can now install from wheel or directory. todo- handle config file
+* Use pbr to grab the version info from the modules
+* VOLTTRON installs using pip and channels correctly and builds the data directory
+* Updated to use pipenv as well as pyproject.toml
+* Fixed issue with multiple patching of gevent monkey
+* Fixed issue with multiple patching of gevent monkey
+
+v0.3.4
+------
+
+* Bump version to 0.3.4
+
+v0.3.3
+------
+
+* Bump version to 0.3.3
+* Add missing import; remove unused imports
+
+v0.3.2
+------
+
+* Update client for changes to make agent work properly
+* Only test with v1.1.6
+
+v0.3.1
+------
+
+* Handle volttron status and bump to new version
+* Updated to include volttron.commands
+
+v0.2.0
+------
+
+* Fixed version import for this installed module
+* Remove flake8 test as rabbit isn't appart of it at present
+* Added \_\_version\_\_ pull from pyproject or module
+* Added test running to the client
+* Moved socket out of this module to utils Formatted files using black. Fixed import errors
+* Updated to utilize the volttron.utils namespace more
+* Temporary transfer
+* Updated pyproject to support module version number
+* Added precommit things
+* added fixtures to conftest.py
+* Added class ClientContext having place to keep data
+* Added docs to the repository
+* changed to using volttron.client as the root
+* removed agents' bases from client
+* Temporary commit
+* Fixed the server key not getting propagated to the address of the connecting agent properly. Bump version
+* Initial commit of volttron-client based on 4a0e393cf01227ae5917324dc83b313ab7fba4da in main volttron repo
