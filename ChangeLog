@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+v0.3.7
+------
+
+* Removed zope from requirements
 * Added setup.cfg description
 * Added documentation to the initial readme
 * Update requirements.txt
