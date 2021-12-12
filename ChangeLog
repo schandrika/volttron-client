@@ -1,6 +1,12 @@
 CHANGES
 =======
 
+v0.3.8
+------
+
+* Fixed starting of agent without double quoting. Use single word with keys
+* Updated changelog, requirements.txt and synced Pipfile and Pipfile.lock
+
 v0.3.7
 ------
 
