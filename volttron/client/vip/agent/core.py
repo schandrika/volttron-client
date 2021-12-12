@@ -737,8 +737,8 @@ class ZMQCore(Core):
 
     def _set_public_and_secret_keys(self):
         if self.publickey is None or self.secretkey is None:
-            self.publickey = os.environ.get("AGENT_PUBLIC_KEY")
-            self.secretkey = os.environ.get("AGENT_SECRET_KEY")
+            self.publickey = os.environ.get("AGENT_PUBLICKEY")
+            self.secretkey = os.environ.get("AGENT_SECRETKEY")
             _log.debug(f" after setting agent provate and public key {self.publickey} {self.secretkey}")
         if self.publickey is None or self.secretkey is None:
             self.publickey, self.secretkey, _ = self._get_keys_from_addr()
@@ -748,8 +748,8 @@ class ZMQCore(Core):
     def _set_server_key(self):
         if self.serverkey is None:
             _log.debug(f" environ keys: {dict(os.environ).keys()}")
-            _log.debug(f"server key from env {os.environ.get('VOLTTRON_SERVER_KEY')}")
-            self.serverkey = os.environ.get("VOLTTRON_SERVER_KEY")
+            _log.debug(f"server key from env {os.environ.get('VOLTTRON_SERVERKEY')}")
+            self.serverkey = os.environ.get("VOLTTRON_SERVERKEY")
         known_serverkey = self._get_serverkey_from_known_hosts()
 
         if (
