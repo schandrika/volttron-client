@@ -15,5 +15,6 @@ mock = "*"
 python_version = "3.8.10"
 
 [packages]
-volttron-utils = ">=0.3.4"
+#volttron-utils = ">=0.3.4"
+volttron-utils = {git = "https://github.com/volttron/volttron-utils.git"}
 grequests = "*"
